@@ -1,0 +1,65 @@
+{
+  "date": "2026-07-14",
+  "focus": "full-body",
+  "format": "circuit",
+  "duration_min": null,
+  "exercises": [
+    { "id": "cat_cow", "name": "Cat-Cow", "muscle_group": "stretch",
+      "sets": [ { "reps": 8, "weight_lb": null, "is_timed": false, "completed": true } ] },
+    { "id": "band_pull_apart", "name": "Band Pull-Apart", "muscle_group": "prehab",
+      "sets": [ { "reps": 15, "weight_lb": null, "is_timed": false, "completed": true } ] },
+    { "id": "band_external_rotation", "name": "Band External Rotation", "muscle_group": "prehab",
+      "sets": [ { "reps": 12, "weight_lb": null, "is_timed": false, "completed": true } ] },
+    { "id": "scap_pushup", "name": "Scapular Push-Up", "muscle_group": "prehab",
+      "sets": [ { "reps": 10, "weight_lb": null, "is_timed": false, "completed": true } ] },
+
+    { "id": "back_squat", "name": "Barbell Back Squat", "muscle_group": "legs",
+      "sets": [
+        { "reps": 8, "weight_lb": 135, "is_timed": false, "completed": true },
+        { "reps": 8, "weight_lb": 135, "is_timed": false, "completed": true },
+        { "reps": 8, "weight_lb": 140, "is_timed": false, "completed": true }
+      ],
+      "note": "Bumped last set to 140 lb (felt good)." },
+    { "id": "db_row", "name": "One-Arm Dumbbell Row", "muscle_group": "back",
+      "sets": [
+        { "reps": 10, "weight_lb": 45, "is_timed": false, "completed": true },
+        { "reps": 10, "weight_lb": 45, "is_timed": false, "completed": true },
+        { "reps": 10, "weight_lb": 45, "is_timed": false, "completed": true }
+      ] },
+
+    { "id": "db_swing", "name": "Dumbbell Swing", "muscle_group": "hip_power",
+      "sets": [
+        { "reps": 15, "weight_lb": 40, "is_timed": false, "completed": true },
+        { "reps": 15, "weight_lb": 40, "is_timed": false, "completed": true },
+        { "reps": 15, "weight_lb": 40, "is_timed": false, "completed": true }
+      ] },
+    { "id": "incline_db_press", "name": "Incline Dumbbell Press", "muscle_group": "chest",
+      "sets": [
+        { "reps": 10, "weight_lb": 45, "is_timed": false, "completed": true },
+        { "reps": 10, "weight_lb": 45, "is_timed": false, "completed": true },
+        { "reps": 10, "weight_lb": 45, "is_timed": false, "completed": true }
+      ] },
+    { "id": "seated_cable_row", "name": "Seated Cable Row", "muscle_group": "back",
+      "sets": [
+        { "reps": 12, "weight_lb": 100, "is_timed": false, "completed": true },
+        { "reps": 12, "weight_lb": 100, "is_timed": false, "completed": true },
+        { "reps": 12, "weight_lb": 100, "is_timed": false, "completed": true }
+      ] },
+
+    { "id": "plank", "name": "Front Plank", "muscle_group": "core", "skipped": true, "sets": [] },
+    { "id": "pallof_press", "name": "Pallof Press", "muscle_group": "core", "skipped": true, "sets": [] },
+    { "id": "dead_bug", "name": "Dead Bug", "muscle_group": "core", "skipped": true, "sets": [] },
+
+    { "id": "doorway_chest_stretch", "name": "Doorway Chest/Shoulder Stretch", "muscle_group": "stretch",
+      "sets": [ { "reps": 30, "weight_lb": null, "is_timed": true, "completed": true } ] },
+    { "id": "hip_flexor_stretch", "name": "Half-Kneeling Hip Flexor Stretch", "muscle_group": "stretch",
+      "sets": [ { "reps": 30, "weight_lb": null, "is_timed": true, "completed": true } ] },
+    { "id": "hamstring_stretch", "name": "Standing Hamstring Stretch", "muscle_group": "stretch",
+      "sets": [ { "reps": 30, "weight_lb": null, "is_timed": true, "completed": true } ] },
+    { "id": "childs_pose", "name": "Child's Pose", "muscle_group": "stretch", "skipped": true, "sets": [] }
+  ],
+  "skips": ["core (whole block)", "childs_pose"],
+  "feel_note": "Duration was a planned estimate (~34 min), not tracked. Skipped the core circuit to save time; right shoulder fine.",
+  "source": "artifact-summary",
+  "_note": "SPRINT-5 LOOP TEST FILE (underscore prefix = not a real workout). Proves the summary->history parse. Sprint 6 / the programmer must IGNORE underscore-prefixed history files when reading past workouts."
+}

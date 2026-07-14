@@ -1,0 +1,60 @@
+{
+  "_note": "SPRINT-5 LOOP-TEST OUTPUT (underscore prefix = not real history; this is a PLAN, not a completed workout). Demonstrates the programmer step: read history/_looptest-2026-07-14-full-body.json -> apply guardrails -> draft the next session. Programming rationale below in _why. At real push time only id/reps/weight_lb/rounds/format/notes are decided here; the coaching fields (setup/cue/mistake/youtube/shoulder_pain_flag/is_timed) and the scoped #exercise-demos are hydrated from exercise_library.json + exercise_demos.json (Sprint 4 recipe).",
+  "_why": [
+    "Last session (2026-07-14) was lower-strength (back squat/row) + full-body conditioning, and the CORE CIRCUIT was SKIPPED -> this session leads with upper push/pull and RESTORES core.",
+    "Shoulder-aware: last squat felt good (bumped to 140); today avoids the worst shoulder mover (lateral_raise, pain 3) and programs face_pull + rear_delt_fly + light db_shoulder_press to strengthen AROUND the shoulder. Incline over flat pressing.",
+    "Conditioning base maintained via a circuit; prehab warmup + stretch cooldown stay first-class per guardrails.",
+    "Confirmed-equipment only (DBs, incline bench, cables, lat pulldown) per the Irondale equipment discovery."
+  ],
+  "id": "2026-07-16-upper-push-pull",
+  "date": "2026-07-16",
+  "focus": "Upper Push/Pull + Core",
+  "format": "circuit",
+  "blocks": [
+    {
+      "id": "warmup", "title": "Warm-Up + Shoulder Prehab", "kind": "straight", "rounds": 1,
+      "note": "Wake the shoulder up before it presses. Slow and honest.",
+      "exercises": [
+        { "id": "arm_circles", "name": "Arm Circles", "muscle_group": "prehab", "reps": 15, "weight_lb": null, "is_timed": false, "rest_seconds": 10 },
+        { "id": "band_pull_apart", "name": "Band Pull-Apart", "muscle_group": "prehab", "reps": 15, "weight_lb": null, "is_timed": false, "rest_seconds": 15 },
+        { "id": "face_pull", "name": "Face Pull", "muscle_group": "prehab", "reps": 15, "weight_lb": 25, "is_timed": false, "rest_seconds": 20 },
+        { "id": "wall_slide", "name": "Wall Slide", "muscle_group": "prehab", "reps": 10, "weight_lb": null, "is_timed": false, "rest_seconds": 20 }
+      ]
+    },
+    {
+      "id": "strength", "title": "A · Upper Strength", "kind": "straight", "rounds": 3,
+      "note": "Straight sets, rest fully. Incline keeps the shoulder happier than flat.",
+      "exercises": [
+        { "id": "incline_db_press", "name": "Incline Dumbbell Press", "muscle_group": "chest", "reps": 8, "weight_lb": 50, "is_timed": false, "rest_seconds": 120, "shoulder_pain_flag": 2 },
+        { "id": "lat_pulldown", "name": "Lat Pulldown", "muscle_group": "back", "reps": 10, "weight_lb": 120, "is_timed": false, "rest_seconds": 90 }
+      ]
+    },
+    {
+      "id": "shoulders", "title": "B · Shoulders + Arms Circuit", "kind": "circuit", "rounds": 3,
+      "note": "Through all three, then rest ~75s. Light and clean on the press — no grinding.",
+      "exercises": [
+        { "id": "db_shoulder_press", "name": "Dumbbell Shoulder Press", "muscle_group": "shoulders", "reps": 10, "weight_lb": 30, "is_timed": false, "rest_seconds": 30, "shoulder_pain_flag": 2 },
+        { "id": "rear_delt_fly", "name": "Rear Delt Fly", "muscle_group": "shoulders", "reps": 15, "weight_lb": 15, "is_timed": false, "rest_seconds": 30 },
+        { "id": "cable_fly", "name": "Cable Fly", "muscle_group": "chest", "reps": 12, "weight_lb": 25, "is_timed": false, "rest_seconds": 75 }
+      ]
+    },
+    {
+      "id": "core", "title": "C · Core Circuit", "kind": "circuit", "rounds": 2,
+      "note": "Restoring the core work that got skipped last session. Brace, breathe.",
+      "exercises": [
+        { "id": "hanging_knee_raise", "name": "Hanging Knee Raise", "muscle_group": "core", "reps": 12, "weight_lb": null, "is_timed": false, "rest_seconds": 30 },
+        { "id": "pallof_press", "name": "Pallof Press", "muscle_group": "core", "reps": 10, "weight_lb": 25, "is_timed": false, "rest_seconds": 20, "per_side": true },
+        { "id": "side_plank", "name": "Side Plank", "muscle_group": "core", "reps": 30, "weight_lb": null, "is_timed": true, "rest_seconds": 30, "per_side": true }
+      ]
+    },
+    {
+      "id": "cooldown", "title": "Cool-Down Stretch", "kind": "straight", "rounds": 1,
+      "note": "Ease down. Back off the right shoulder if it barks.",
+      "exercises": [
+        { "id": "doorway_chest_stretch", "name": "Doorway Chest/Shoulder Stretch", "muscle_group": "stretch", "reps": 30, "weight_lb": null, "is_timed": true, "rest_seconds": 10, "per_side": true, "shoulder_pain_flag": 1.5 },
+        { "id": "thoracic_rotation", "name": "Thoracic Rotation", "muscle_group": "stretch", "reps": 30, "weight_lb": null, "is_timed": true, "rest_seconds": 10, "per_side": true },
+        { "id": "childs_pose", "name": "Child's Pose", "muscle_group": "stretch", "reps": 45, "weight_lb": null, "is_timed": true, "rest_seconds": 0 }
+      ]
+    }
+  ]
+}

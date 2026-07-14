@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workout History Record",
+  "description": "One completed workout AS ACTUALLY PERFORMED. One file per workout, named history/YYYY-MM-DD-<focus>.json. Written by the desktop session after Austin pastes his 'Copy my workout summary' block from the artifact. This is the source of truth for programming the next session; the artifact only ever holds the current planned workout.",
+  "type": "object",
+  "required": ["date", "focus", "format", "exercises"],
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date the workout was performed, YYYY-MM-DD. ALWAYS present."
+    },
+    "focus": {
+      "type": "string",
+      "description": "Session focus, e.g. 'full-body', 'upper', 'legs', 'chest-shoulders', 'back', 'conditioning', 'desk-stretch'."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["straight-sets", "circuit", "emom", "amrap", "for-time", "mixed"],
+      "description": "Primary training format of the session."
+    },
+    "duration_min": {
+      "type": ["number", "null"],
+      "description": "Total session minutes if captured; null if not."
+    },
+    "exercises": {
+      "type": "array",
+      "description": "Every exercise attempted, in order, as completed.",
+      "items": {
+        "type": "object",
+        "required": ["name", "sets"],
+        "properties": {
+          "id": {
+            "type": ["string", "null"],
+            "description": "exercise_library.json id if it maps to a known exercise; null if ad-hoc."
+          },
+          "name": { "type": "string" },
+          "muscle_group": { "type": ["string", "null"] },
+          "sets": {
+            "type": "array",
+            "description": "One entry per set actually performed (after any tap-to-edit).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "reps": { "type": ["number", "string", "null"], "description": "Reps done, or seconds for a timed hold (see is_timed)." },
+                "weight_lb": { "type": ["number", "null"], "description": "Working weight in pounds; null for bodyweight." },
+                "is_timed": { "type": "boolean", "default": false, "description": "True when reps field represents seconds held." },
+                "completed": { "type": "boolean", "default": true }
+              }
+            }
+          },
+          "skipped": { "type": "boolean", "default": false, "description": "True if the exercise was skipped entirely." },
+          "note": { "type": ["string", "null"], "description": "Optional per-exercise note (e.g. 'right shoulder twinged on set 3')." }
+        }
+      }
+    },
+    "skips": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Names/ids of exercises or blocks skipped, for quick scanning."
+    },
+    "feel_note": {
+      "type": ["string", "null"],
+      "description": "Optional overall feel note Austin adds (energy, appetite, shoulder, mood)."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["artifact-summary", "manual", "chat"],
+      "default": "artifact-summary",
+      "description": "How the record was captured."
+    }
+  }
+}
