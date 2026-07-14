@@ -1,0 +1,1416 @@
+<meta charset="utf-8">
+<title>Workout</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<style>
+  :root {
+    /* ---- palette: cool-biased dark ground, track-clay orange accent ---- */
+    --bg: #0E1116;
+    --surface: #171B22;
+    --surface-2: #1F2632;
+    --line: #2A3140;
+    --line-soft: #222836;
+    --ink: #EDF0F4;
+    --ink-2: #A7B0BE;
+    --ink-3: #6D7686;
+    --accent: #FF5A1F;      /* current position, progress, active */
+    --accent-ink: #FFFFFF;
+    --accent-dim: #2A1A12;
+    --done: #30D158;        /* semantic: completed set */
+    --done-dim: #14301C;
+    --warn: #FFB020;        /* shoulder caution */
+    --warn-dim: #33260C;
+    --radius: 16px;
+    --radius-sm: 11px;
+    --tap: 48px;
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #F6F7F9;
+      --surface: #FFFFFF;
+      --surface-2: #F0F2F5;
+      --line: #DDE1E8;
+      --line-soft: #E7EAEF;
+      --ink: #14181F;
+      --ink-2: #4A5361;
+      --ink-3: #8A94A3;
+      --accent: #E24A12;
+      --accent-ink: #FFFFFF;
+      --accent-dim: #FCEBE3;
+      --done: #1E9E48;
+      --done-dim: #E2F5E8;
+      --warn: #B5760B;
+      --warn-dim: #FBF0D8;
+      --shadow: 0 1px 2px rgba(16,20,30,.04), 0 6px 20px rgba(16,20,30,.08);
+    }
+  }
+  /* explicit toggle wins over the media query in both directions */
+  :root[data-theme="dark"] {
+    --bg:#0E1116; --surface:#171B22; --surface-2:#1F2632; --line:#2A3140; --line-soft:#222836;
+    --ink:#EDF0F4; --ink-2:#A7B0BE; --ink-3:#6D7686;
+    --accent:#FF5A1F; --accent-ink:#FFFFFF; --accent-dim:#2A1A12;
+    --done:#30D158; --done-dim:#14301C; --warn:#FFB020; --warn-dim:#33260C;
+    --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --bg:#F6F7F9; --surface:#FFFFFF; --surface-2:#F0F2F5; --line:#DDE1E8; --line-soft:#E7EAEF;
+    --ink:#14181F; --ink-2:#4A5361; --ink-3:#8A94A3;
+    --accent:#E24A12; --accent-ink:#FFFFFF; --accent-dim:#FCEBE3;
+    --done:#1E9E48; --done-dim:#E2F5E8; --warn:#B5760B; --warn-dim:#FBF0D8;
+    --shadow:0 1px 2px rgba(16,20,30,.04), 0 6px 20px rgba(16,20,30,.08);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  a { color: var(--accent); }
+
+  /* ---------- shell ---------- */
+  .app { max-width: 460px; margin: 0 auto; min-height: 100vh; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 40;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+    padding: calc(var(--safe-top) + 10px) 16px 10px;
+  }
+  .topbar-row { display: flex; align-items: center; gap: 12px; }
+  .topbar-titles { flex: 1; min-width: 0; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow .date { color: var(--ink-3); font-weight: 600; letter-spacing: .06em; }
+  h1.focus {
+    margin: 2px 0 0; font-size: 19px; font-weight: 800; letter-spacing: -.01em;
+    text-wrap: balance; line-height: 1.15;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .iconbtn {
+    flex: 0 0 auto; height: var(--tap); min-width: var(--tap);
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 13px;
+    color: var(--ink); font-weight: 700; font-size: 13px; padding: 0 13px;
+  }
+  .iconbtn svg { width: 19px; height: 19px; }
+  .iconbtn:active { transform: scale(.96); }
+
+  .progress-wrap { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+  .bar { flex: 1; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #FFB07A));
+    transition: width .35s cubic-bezier(.2,.7,.2,1); }
+  .progress-meta { font-size: 12.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  .progress-meta b { color: var(--ink); }
+  .est { font-size: 12.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+
+  /* ---------- blocks ---------- */
+  main { padding: 16px 16px calc(var(--safe-bottom) + 40px); display: flex; flex-direction: column; gap: 18px; }
+
+  .block {
+    background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow);
+  }
+  .block.skipped { opacity: .5; }
+  .block-head { padding: 14px 15px 12px; border-bottom: 1px solid var(--line-soft); }
+  .block-head-row { display: flex; align-items: flex-start; gap: 10px; }
+  .block-title { flex: 1; min-width: 0; }
+  .block-title h2 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+  .block-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: .03em; padding: 3px 8px; border-radius: 7px;
+    background: var(--surface-2); color: var(--ink-2); text-transform: uppercase;
+  }
+  .tag.fmt { background: var(--accent-dim); color: var(--accent); }
+  .tag.time { background: transparent; color: var(--ink-3); padding-left: 0; text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .tag.time svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 3px; }
+  .block-note { margin: 9px 0 0; font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+
+  .skipbtn {
+    flex: 0 0 auto; height: 34px; padding: 0 11px; border-radius: 9px;
+    background: transparent; border: 1px solid var(--line); color: var(--ink-3);
+    font-size: 12px; font-weight: 700;
+  }
+  .skipbtn:active { transform: scale(.96); }
+  .block.skipped .skipbtn { border-color: var(--accent); color: var(--accent); }
+
+  .ex-list { display: flex; flex-direction: column; }
+  .ex { padding: 13px 15px; border-top: 1px solid var(--line-soft); }
+  .ex:first-child { border-top: none; }
+  .ex.skipped .ex-body { opacity: .45; }
+  .ex.current { background: linear-gradient(180deg, var(--accent-dim), transparent 70%); }
+
+  .ex-head { display: flex; align-items: center; gap: 10px; }
+  .ex-name {
+    flex: 1; min-width: 0; text-align: left; background: none; border: none; padding: 0;
+    font-size: 15.5px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .ex-name .info { color: var(--ink-3); flex: 0 0 auto; }
+  .ex-name .info svg { width: 16px; height: 16px; display: block; }
+  .ex.current .ex-name { color: var(--accent); }
+  .chip {
+    font-size: 10px; font-weight: 800; letter-spacing: .04em; padding: 2px 6px; border-radius: 6px;
+    text-transform: uppercase; flex: 0 0 auto;
+  }
+  .chip.now { background: var(--accent); color: var(--accent-ink); }
+  .chip.warn { background: var(--warn-dim); color: var(--warn); }
+  .ex-skip {
+    flex: 0 0 auto; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line);
+    background: transparent; color: var(--ink-3); font-size: 15px; display: inline-flex;
+    align-items: center; justify-content: center;
+  }
+  .ex-skip:active { transform: scale(.94); }
+  .ex.skipped .ex-skip { border-color: var(--accent); color: var(--accent); }
+  .ex-target { margin: 3px 0 0; font-size: 12.5px; color: var(--ink-3); font-weight: 600; }
+
+  .sets { margin-top: 11px; display: flex; flex-direction: column; gap: 8px; }
+  .set {
+    display: flex; align-items: center; gap: 10px; min-height: var(--tap);
+    background: var(--surface-2); border: 1px solid transparent; border-radius: var(--radius-sm);
+    padding: 6px 10px 6px 12px; user-select: none;
+  }
+  .set:active { border-color: var(--line); }
+  .set.done { background: var(--done-dim); }
+  .set-label { font-size: 12px; font-weight: 800; color: var(--ink-3); width: 30px; flex: 0 0 auto; letter-spacing: .02em; }
+  .set.done .set-label { color: var(--done); }
+  .fields { flex: 1; display: flex; gap: 8px; min-width: 0; }
+  .field {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+    background: none; border: none; padding: 4px 8px; border-radius: 9px; min-width: 58px;
+  }
+  .field:active { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+  .field .flabel { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .field .fval { font-size: 17px; font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
+  .field .fval .unit { font-size: 11px; font-weight: 700; color: var(--ink-3); margin-left: 1px; }
+  .field .fval.empty { color: var(--ink-3); }
+  .field input {
+    font-family: inherit; font-size: 17px; font-weight: 800; width: 3.4em; padding: 0;
+    background: transparent; border: none; color: var(--accent); outline: none;
+    -moz-appearance: textfield; letter-spacing: -.01em;
+  }
+  .field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .check {
+    flex: 0 0 auto; width: var(--tap); height: var(--tap); border-radius: 12px;
+    border: 2px solid var(--line); background: transparent; display: inline-flex;
+    align-items: center; justify-content: center; margin-left: auto;
+  }
+  .check svg { width: 24px; height: 24px; opacity: 0; transform: scale(.5); transition: opacity .15s, transform .15s; }
+  .set.done .check { background: var(--done); border-color: var(--done); }
+  .set.done .check svg { opacity: 1; transform: scale(1); color: #fff; }
+
+  /* ---------- footer status ---------- */
+  .alldone {
+    margin: 4px 16px 0; padding: 16px; border-radius: var(--radius);
+    background: var(--done-dim); border: 1px solid color-mix(in srgb, var(--done) 40%, transparent);
+    text-align: center; display: none;
+  }
+  .alldone.show { display: block; }
+  .alldone b { color: var(--done); font-size: 15px; }
+  .alldone p { margin: 5px 0 0; font-size: 13px; color: var(--ink-2); }
+
+  /* ---------- summary action (footer + all-done) ---------- */
+  .footer-actions { margin: 20px 16px calc(var(--safe-bottom) + 8px); }
+  .summary-btn {
+    width: 100%; min-height: var(--tap); border-radius: 13px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); font-weight: 800; font-size: 14.5px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  }
+  .summary-btn svg { width: 19px; height: 19px; color: var(--accent); flex: 0 0 auto; }
+  .summary-btn:active { transform: scale(.99); }
+  .alldone .summary-btn { margin-top: 13px; background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .alldone .summary-btn svg { color: var(--accent-ink); }
+  .footer-hint { margin: 9px 6px 0; font-size: 12px; color: var(--ink-3); text-align: center; line-height: 1.45; }
+
+  /* summary sheet */
+  .summary-sheet h2 { margin: 0 0 4px; }
+  .summary-lead { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+  .summary-text {
+    margin-top: 14px; width: 100%; height: 44vh; min-height: 220px; resize: none;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 13px;
+    padding: 13px 14px; color: var(--ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.5; white-space: pre; overflow: auto;
+    -webkit-overflow-scrolling: touch; font-variant-numeric: tabular-nums;
+  }
+  .summary-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .summary-actions .tl-btn { min-height: var(--tap); }
+  .summary-status { margin: 11px 2px 2px; font-size: 12.5px; font-weight: 700; color: var(--ink-3); text-align: center; min-height: 16px; line-height: 1.4; }
+  .summary-status.ok { color: var(--done); }
+
+  /* ---------- overlays (map + detail) ---------- */
+  .scrim {
+    position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.55);
+    display: none; opacity: 0; transition: opacity .2s;
+  }
+  .scrim.show { display: block; opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .scrim, .bar > i, .sheet, .check svg { transition: none !important; } }
+
+  /* map = full-screen sheet */
+  .map {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    max-width: 460px; margin: 0 auto; background: var(--bg);
+  }
+  .map-head {
+    padding: calc(var(--safe-top) + 12px) 16px 12px; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .map-head h2 { flex: 1; margin: 0; font-size: 17px; font-weight: 800; }
+  .map-body { flex: 1; overflow-y: auto; padding: 8px 16px calc(var(--safe-bottom) + 24px); -webkit-overflow-scrolling: touch; }
+  .map-block { margin-top: 16px; }
+  .map-block h3 { margin: 0 0 4px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .map-block .mb-est { font-weight: 600; color: var(--ink-3); letter-spacing: 0; text-transform: none; }
+  .map-ex {
+    width: 100%; text-align: left; display: flex; align-items: center; gap: 11px;
+    background: var(--surface); border: 1px solid var(--line-soft); border-radius: 12px;
+    padding: 11px 13px; margin-top: 7px; min-height: var(--tap); font-size: 14.5px; font-weight: 600; color: var(--ink);
+  }
+  .map-ex:active { transform: scale(.99); }
+  .dot { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 99px; border: 2px solid var(--line);
+    display: inline-flex; align-items: center; justify-content: center; }
+  .dot svg { width: 13px; height: 13px; color: #fff; }
+  .map-ex.done .dot { background: var(--done); border-color: var(--done); }
+  .map-ex.current { border-color: var(--accent); background: var(--accent-dim); }
+  .map-ex.current .dot { border-color: var(--accent); background: var(--accent); }
+  .map-ex.current .mx-name { color: var(--accent); font-weight: 800; }
+  .map-ex.skipped { opacity: .5; }
+  .map-ex.skipped .mx-name { text-decoration: line-through; }
+  .mx-name { flex: 1; min-width: 0; }
+  .mx-meta { font-size: 12px; color: var(--ink-3); font-weight: 600; }
+  .map-block.skipped { opacity: .5; }
+
+  /* detail = bottom sheet */
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; max-width: 460px; margin: 0 auto;
+    background: var(--surface); border-radius: 20px 20px 0 0; border-top: 1px solid var(--line);
+    padding: 8px 18px calc(var(--safe-bottom) + 22px); max-height: 86%; overflow-y: auto;
+    transform: translateY(100%); transition: transform .26s cubic-bezier(.2,.8,.2,1);
+  }
+  .scrim.show .sheet { transform: translateY(0); }
+  .grabber { width: 40px; height: 5px; border-radius: 99px; background: var(--line); margin: 6px auto 14px; }
+  .sheet h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em; text-wrap: balance; }
+  .sheet-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .demo-slot {
+    margin-top: 15px; height: 128px; border-radius: 13px; border: 1px dashed var(--line);
+    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    color: var(--ink-3); font-size: 12.5px; font-weight: 600; text-align: center; padding: 0 20px; gap: 8px;
+  }
+  .demo-slot.has-demo {
+    border-style: solid; border-color: var(--line-soft); padding: 10px 14px; height: 154px;
+  }
+  .demo-slot.has-demo svg { width: 100%; height: 100%; display: block; }
+  .demo-cap {
+    margin: 6px 2px 0; font-size: 11px; font-weight: 600; color: var(--ink-3);
+    display: flex; align-items: center; gap: 6px; line-height: 1.3;
+  }
+  .demo-cap .dot-s { flex: 0 0 auto; width: 12px; height: 3px; border-radius: 2px; background: var(--ink-3); }
+  .demo-cap .dot-a { flex: 0 0 auto; width: 12px; height: 3px; border-radius: 2px; background: var(--accent); }
+  .cues { margin: 16px 0 0; display: flex; flex-direction: column; gap: 13px; }
+  .cue-item { display: flex; gap: 11px; }
+  .cue-item .k {
+    flex: 0 0 auto; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--accent); width: 64px; padding-top: 2px;
+  }
+  .cue-item.mistake .k { color: var(--warn); }
+  .cue-item .v { font-size: 14px; color: var(--ink); line-height: 1.45; }
+  .yt {
+    display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 18px;
+    height: var(--tap); border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line);
+    color: var(--ink); font-weight: 700; font-size: 14px; text-decoration: none;
+  }
+  .yt:active { transform: scale(.98); }
+  .yt svg { width: 20px; height: 20px; color: #FF3B30; }
+  .sheet-close {
+    width: 100%; height: var(--tap); margin-top: 10px; border-radius: 12px; border: none;
+    background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 15px;
+  }
+  .sheet-close:active { transform: scale(.98); }
+
+  /* ---------- timers (rest / hold / block-format clocks) ---------- */
+  .timer-wrap { margin-top: 11px; }
+  .block-head .timer-wrap { margin-top: 12px; }
+  .timer-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .timer-pill {
+    display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px;
+    border-radius: 11px; background: var(--surface-2); border: 1px solid var(--line);
+    color: var(--ink-2); font-size: 13px; font-weight: 700; letter-spacing: .01em;
+  }
+  .timer-pill svg { width: 15px; height: 15px; color: var(--ink-3); flex: 0 0 auto; }
+  .timer-pill:active { transform: scale(.97); }
+  .block-head .timer-pill { background: var(--surface); }
+
+  .timer-live {
+    border-radius: 14px; border: 1px solid var(--accent); background: var(--accent-dim);
+    padding: 11px 12px 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .timer-live.paused { border-color: var(--line); background: var(--surface-2); }
+  .timer-live.done { border-color: var(--done); background: var(--done-dim); }
+  .tl-top { display: flex; align-items: baseline; gap: 8px; }
+  .tl-label { font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .timer-live.paused .tl-label { color: var(--ink-3); }
+  .timer-live.done .tl-label { color: var(--done); }
+  .tl-sub { font-size: 12px; font-weight: 800; color: var(--ink-3); margin-left: auto; letter-spacing: .02em; }
+  .tl-main { display: flex; align-items: center; gap: 10px; }
+  .tl-clock { flex: 1; text-align: center; font-size: 42px; font-weight: 800; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
+  .timer-live.done .tl-clock { color: var(--done); }
+  .tl-adj {
+    flex: 0 0 auto; min-width: 48px; height: 48px; padding: 0 10px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 800;
+  }
+  .tl-adj:active { transform: scale(.94); }
+  .tl-actions { display: flex; gap: 8px; }
+  .tl-btn {
+    flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); font-size: 13px; font-weight: 800; display: inline-flex; align-items: center;
+    justify-content: center; gap: 7px;
+  }
+  .tl-btn svg { width: 17px; height: 17px; flex: 0 0 auto; }
+  .tl-btn:active { transform: scale(.98); }
+  .tl-btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .timer-live.done .tl-btn.primary { background: var(--done); }
+  .tl-round {
+    flex: 2; min-height: 44px; border-radius: 12px; border: 1px solid var(--accent); background: transparent;
+    color: var(--accent); font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .tl-round b { font-size: 19px; letter-spacing: -.01em; }
+  .tl-round:active { transform: scale(.98); }
+  .tl-minus { flex: 0 0 auto; min-width: 48px; }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="topbar-titles">
+        <div class="eyebrow"><span id="fmt-eyebrow">Circuit</span><span class="date" id="date-lbl"></span></div>
+        <h1 class="focus" id="focus-lbl">Workout</h1>
+      </div>
+      <button class="iconbtn" id="map-btn" aria-label="Workout map">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Map
+      </button>
+      <button class="iconbtn" id="theme-btn" aria-label="Toggle theme" style="padding:0;width:var(--tap)">
+        <span id="theme-icon"></span>
+      </button>
+    </div>
+    <div class="progress-wrap">
+      <div class="bar"><i id="bar-fill"></i></div>
+      <div class="progress-meta"><b id="done-count">0</b>/<span id="total-count">0</span> sets</div>
+      <div class="est">· <span id="est-total">0</span> min</div>
+    </div>
+  </header>
+
+  <main id="blocks"></main>
+
+  <div class="alldone" id="alldone">
+    <b>Session complete 💪</b>
+    <p>Nice work — copy your summary and paste it back in chat to log it.</p>
+    <button class="summary-btn" type="button" data-open-summary>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy my workout summary
+    </button>
+  </div>
+
+  <div class="footer-actions">
+    <button class="summary-btn" type="button" data-open-summary>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copy my workout summary
+    </button>
+    <p class="footer-hint">Opens a summary you can copy and paste back in chat — logs the workout and programs your next one.</p>
+  </div>
+</div>
+
+<!-- MAP overlay -->
+<div class="scrim" id="map-scrim">
+  <div class="map">
+    <div class="map-head">
+      <h2>Workout Map</h2>
+      <button class="iconbtn" id="map-close" aria-label="Close map" style="width:var(--tap);padding:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="map-body" id="map-body"></div>
+  </div>
+</div>
+
+<!-- DETAIL bottom sheet -->
+<div class="scrim" id="detail-scrim">
+  <div class="sheet" id="detail-sheet" role="dialog" aria-modal="true">
+    <div class="grabber"></div>
+    <h2 id="d-name"></h2>
+    <div class="sheet-chips" id="d-chips"></div>
+    <div class="demo-slot" id="d-demo">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+      Form drawing coming soon
+    </div>
+    <div class="demo-cap" id="d-demo-cap" style="display:none">
+      <span class="dot-s"></span>start<span class="dot-a" style="margin-left:8px"></span>motion
+    </div>
+    <div class="cues">
+      <div class="cue-item"><span class="k">Setup</span><span class="v" id="d-setup"></span></div>
+      <div class="cue-item"><span class="k">Key cue</span><span class="v" id="d-cue"></span></div>
+      <div class="cue-item mistake"><span class="k">Avoid</span><span class="v" id="d-mistake"></span></div>
+    </div>
+    <a class="yt" id="d-yt" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.9-.5-5.8a3 3 0 0 0-2.1-2.1C18.5 3.5 12 3.5 12 3.5s-6.5 0-8.4.6A3 3 0 0 0 1.5 6.2C1 8.1 1 12 1 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 8.4.6 8.4.6s6.5 0 8.4-.6a3 3 0 0 0 2.1-2.1C23 15.9 23 12 23 12z"/><path d="M9.8 15.5v-7l6 3.5-6 3.5z" fill="#fff"/></svg>
+      Watch on YouTube
+    </a>
+    <button class="sheet-close" id="d-close">Got it</button>
+  </div>
+</div>
+
+<!-- SUMMARY bottom sheet -->
+<div class="scrim" id="summary-scrim">
+  <div class="sheet summary-sheet" role="dialog" aria-modal="true">
+    <div class="grabber"></div>
+    <h2>Workout summary</h2>
+    <p class="summary-lead">Copy this and paste it back into any Claude chat to log the workout. Nothing is sent from here.</p>
+    <textarea class="summary-text" id="summary-text" readonly spellcheck="false" aria-label="Workout summary text"></textarea>
+    <div class="summary-actions">
+      <button class="tl-btn primary" id="summary-copy" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+      <button class="tl-btn" id="summary-done" type="button">Close</button>
+    </div>
+    <p class="summary-status" id="summary-status">Tip: if Copy doesn’t work, tap the text, Select All, then Copy.</p>
+  </div>
+</div>
+
+<script type="application/json" id="workout-data">
+{
+  "id": "2026-07-14-full-body",
+  "date": "2026-07-14",
+  "focus": "Full-Body Conditioning Base",
+  "format": "circuit",
+  "blocks": [
+    {
+      "id": "warmup",
+      "title": "Warm-Up + Shoulder Prehab",
+      "kind": "straight",
+      "rounds": 1,
+      "note": "One easy pass. Wake the right shoulder up before anything loads it.",
+      "exercises": [
+        { "id":"cat_cow","name":"Cat-Cow","muscle_group":"stretch","reps":8,"weight_lb":null,"is_timed":false,"rest_seconds":10,"shoulder_pain_flag":0,
+          "setup":"Hands under shoulders, knees under hips.","cue":"Alternate arching (cow) and rounding (cat) the spine with the breath.","mistake":"Rushing and only moving the lower back.","youtube":"https://www.youtube.com/results?search_query=cat+cow+spine+mobility" },
+        { "id":"band_pull_apart","name":"Band Pull-Apart","muscle_group":"prehab","reps":15,"weight_lb":null,"is_timed":false,"rest_seconds":20,"shoulder_pain_flag":0,
+          "setup":"Arms straight at chest height, band held shoulder-width, ribs down.","cue":"Pull the band apart by squeezing the shoulder blades together, control the return.","mistake":"Shrugging or bending the elbows to move more band.","youtube":"https://www.youtube.com/results?search_query=band+pull+apart+shoulder+prehab" },
+        { "id":"band_external_rotation","name":"Band External Rotation","muscle_group":"prehab","reps":12,"weight_lb":null,"is_timed":false,"rest_seconds":20,"shoulder_pain_flag":0,"per_side":true,
+          "setup":"Elbow pinned to the side at 90 degrees, band anchored at waist height across the body.","cue":"Rotate the forearm outward keeping the elbow glued to the ribs.","mistake":"Letting the elbow drift off the body and using the shoulder to cheat.","youtube":"https://www.youtube.com/results?search_query=band+external+rotation+rotator+cuff" },
+        { "id":"scap_pushup","name":"Scapular Push-Up","muscle_group":"prehab","reps":10,"weight_lb":null,"is_timed":false,"rest_seconds":20,"shoulder_pain_flag":0,
+          "setup":"Top of a push-up or on knees, arms locked straight.","cue":"Without bending the elbows, pinch the shoulder blades together then push the upper back to the ceiling.","mistake":"Bending the elbows and turning it into a tiny push-up.","youtube":"https://www.youtube.com/results?search_query=scapular+push+up+serratus" }
+      ]
+    },
+    {
+      "id": "strength",
+      "title": "A · Lower Strength",
+      "kind": "straight",
+      "rounds": 3,
+      "note": "Straight sets. Rest fully between rounds — this is the strength anchor.",
+      "exercises": [
+        { "id":"back_squat","name":"Barbell Back Squat","muscle_group":"legs","reps":8,"weight_lb":135,"is_timed":false,"rest_seconds":150,"shoulder_pain_flag":1,
+          "setup":"Bar on upper traps, feet shoulder-width, toes slightly out, big brace.","cue":"Sit down between the hips, knees tracking over toes, drive up through mid-foot.","mistake":"Knees caving in or heels lifting off the floor.","youtube":"https://www.youtube.com/results?search_query=back+squat+technique+squat+university" },
+        { "id":"db_row","name":"One-Arm Dumbbell Row","muscle_group":"back","reps":10,"weight_lb":45,"is_timed":false,"rest_seconds":75,"shoulder_pain_flag":1,"per_side":true,
+          "setup":"One hand and knee on the bench, flat back, dumbbell hanging.","cue":"Row the dumbbell to the hip, leading with the elbow, squeeze the lat.","mistake":"Rotating the torso to throw the weight up.","youtube":"https://www.youtube.com/results?search_query=one+arm+dumbbell+row+form" }
+      ]
+    },
+    {
+      "id": "circuit",
+      "title": "B · Conditioning Circuit",
+      "kind": "circuit",
+      "rounds": 3,
+      "note": "Move through all three back to back, then rest ~90s. Keep the heart rate up.",
+      "exercises": [
+        { "id":"db_swing","name":"Dumbbell Swing","muscle_group":"hip_power","reps":15,"weight_lb":40,"is_timed":false,"rest_seconds":30,"shoulder_pain_flag":1,
+          "setup":"One dumbbell held with both hands, feet slightly wider than shoulders.","cue":"Hinge and hike the weight back, then snap the hips forward to float it to chest height.","mistake":"Squatting and lifting with the arms instead of a hip hinge snap.","youtube":"https://www.youtube.com/results?search_query=dumbbell+swing+hip+hinge+form" },
+        { "id":"incline_db_press","name":"Incline Dumbbell Press","muscle_group":"chest","reps":10,"weight_lb":45,"is_timed":false,"rest_seconds":30,"shoulder_pain_flag":2,
+          "setup":"Bench at 30 degrees, dumbbells at chest, wrists stacked over elbows.","cue":"Press up and slightly together, keeping shoulder blades pinned to the bench.","mistake":"Setting the bench too steep so it becomes a shoulder press.","youtube":"https://www.youtube.com/results?search_query=incline+dumbbell+press+jeff+nippard" },
+        { "id":"seated_cable_row","name":"Seated Cable Row","muscle_group":"back","reps":12,"weight_lb":100,"is_timed":false,"rest_seconds":90,"shoulder_pain_flag":1,
+          "setup":"Feet on the plate, soft knees, tall chest, slight forward reach.","cue":"Pull to the belly button, squeeze the shoulder blades, control the return.","mistake":"Heaving with the lower back instead of rowing with the arms and back.","youtube":"https://www.youtube.com/results?search_query=seated+cable+row+form" }
+      ]
+    },
+    {
+      "id": "core",
+      "title": "C · Core Circuit",
+      "kind": "circuit",
+      "rounds": 2,
+      "note": "Two rounds. Brace hard, breathe normally.",
+      "exercises": [
+        { "id":"plank","name":"Front Plank","muscle_group":"core","reps":40,"weight_lb":null,"is_timed":true,"rest_seconds":30,"shoulder_pain_flag":0,
+          "setup":"Forearms under shoulders, body in a straight line, toes tucked.","cue":"Brace the abs and squeeze the glutes, breathe normally.","mistake":"Hips sagging or piking up toward the ceiling.","youtube":"https://www.youtube.com/results?search_query=front+plank+form" },
+        { "id":"pallof_press","name":"Pallof Press","muscle_group":"core","reps":10,"weight_lb":25,"is_timed":false,"rest_seconds":20,"shoulder_pain_flag":0,"per_side":true,
+          "setup":"Stand side-on to the cable at chest height, hands at the sternum.","cue":"Press the handle straight out and resist the pull to rotate, then return.","mistake":"Letting the torso twist toward the machine.","youtube":"https://www.youtube.com/results?search_query=pallof+press+form" },
+        { "id":"dead_bug","name":"Dead Bug","muscle_group":"core","reps":12,"weight_lb":null,"is_timed":false,"rest_seconds":45,"shoulder_pain_flag":0,"per_side":true,
+          "setup":"On the back, arms up, knees bent to 90 degrees over the hips, lower back flat.","cue":"Lower the opposite arm and leg slowly while keeping the lower back pinned.","mistake":"Letting the lower back arch up as the limbs extend.","youtube":"https://www.youtube.com/results?search_query=dead+bug+exercise+form" }
+      ]
+    },
+    {
+      "id": "cooldown",
+      "title": "Cool-Down Stretch",
+      "kind": "straight",
+      "rounds": 1,
+      "note": "Ease down. Hold each, breathe into it, back off the right shoulder if it barks.",
+      "exercises": [
+        { "id":"doorway_chest_stretch","name":"Doorway Chest/Shoulder Stretch","muscle_group":"stretch","reps":30,"weight_lb":null,"is_timed":true,"rest_seconds":10,"shoulder_pain_flag":1.5,"per_side":true,
+          "setup":"Forearm on the frame, elbow at shoulder height.","cue":"Step gently forward until you feel a mild stretch across the chest and front of the shoulder.","mistake":"Pushing into pain, especially on the right shoulder.","youtube":"https://www.youtube.com/results?search_query=doorway+chest+stretch" },
+        { "id":"hip_flexor_stretch","name":"Half-Kneeling Hip Flexor Stretch","muscle_group":"stretch","reps":30,"weight_lb":null,"is_timed":true,"rest_seconds":10,"shoulder_pain_flag":0,"per_side":true,
+          "setup":"Half-kneeling, back toe down, tall torso.","cue":"Tuck the pelvis under and shift slightly forward until you feel the front of the back hip.","mistake":"Arching the lower back instead of tucking the pelvis.","youtube":"https://www.youtube.com/results?search_query=half+kneeling+hip+flexor+stretch" },
+        { "id":"hamstring_stretch","name":"Standing Hamstring Stretch","muscle_group":"stretch","reps":30,"weight_lb":null,"is_timed":true,"rest_seconds":10,"shoulder_pain_flag":0,"per_side":true,
+          "setup":"One heel on a low bench, leg straight, hips square.","cue":"Hinge at the hips with a flat back until you feel the hamstring.","mistake":"Rounding the back to reach the toes.","youtube":"https://www.youtube.com/results?search_query=standing+hamstring+stretch" },
+        { "id":"childs_pose","name":"Child's Pose","muscle_group":"stretch","reps":45,"weight_lb":null,"is_timed":true,"rest_seconds":0,"shoulder_pain_flag":0,
+          "setup":"Kneel and sit the hips back toward the heels, arms reaching forward.","cue":"Breathe and let the chest sink toward the floor for a lat and lower-back stretch.","mistake":"Holding tension instead of relaxing into it.","youtube":"https://www.youtube.com/results?search_query=childs+pose+stretch" }
+      ]
+    }
+  ]
+}
+</script>
+
+<script type="application/json" id="exercise-demos">
+{"cat_cow":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"116\" y1=\"70\" x2=\"137\" y2=\"70\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"137\" y1=\"70\" x2=\"158\" y2=\"70\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"158\" y1=\"70\" x2=\"167\" y2=\"70\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"116\" y1=\"70\" x2=\"147.9\" y2=\"67.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"147.9\" y1=\"67.2\" x2=\"164.9\" y2=\"66.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"164.9\" y1=\"66.6\" x2=\"180.9\" y2=\"66.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"159.1\" cy=\"73.7\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"116\" y1=\"70\" x2=\"137\" y2=\"70\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"137\" y1=\"70\" x2=\"158\" y2=\"70\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"158\" y1=\"70\" x2=\"167\" y2=\"70\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"116\" y1=\"70\" x2=\"146.9\" y2=\"61.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"146.9\" y1=\"61.7\" x2=\"163.9\" y2=\"61.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"163.9\" y1=\"61.1\" x2=\"179.9\" y2=\"60.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"156.9\" cy=\"53.4\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><path d=\"M76 44 A 12 12 0 0 1 76 68\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M76 68 L68 72.5 L68 63.5 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","band_pull_apart":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"100\" y1=\"80\" x2=\"104.4\" y2=\"100.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104.4\" y1=\"100.5\" x2=\"107.3\" y2=\"121.3\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"107.3\" y1=\"121.3\" x2=\"115.1\" y2=\"116.8\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"80\" x2=\"95.6\" y2=\"100.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"95.6\" y1=\"100.5\" x2=\"92.7\" y2=\"121.3\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"92.7\" y1=\"121.3\" x2=\"84.9\" y2=\"116.8\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"80\" x2=\"100\" y2=\"48\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"48\" x2=\"117\" y2=\"48\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"117\" y1=\"48\" x2=\"133\" y2=\"48.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"48\" x2=\"83\" y2=\"48\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"83\" y1=\"48\" x2=\"67\" y2=\"48.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"100\" cy=\"35\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"80\" x2=\"104.4\" y2=\"100.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104.4\" y1=\"100.5\" x2=\"107.3\" y2=\"121.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"107.3\" y1=\"121.3\" x2=\"115.1\" y2=\"116.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"80\" x2=\"95.6\" y2=\"100.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"95.6\" y1=\"100.5\" x2=\"92.7\" y2=\"121.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"92.7\" y1=\"121.3\" x2=\"84.9\" y2=\"116.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"80\" x2=\"100\" y2=\"48\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"48\" x2=\"114.7\" y2=\"56.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"114.7\" y1=\"56.5\" x2=\"126\" y2=\"67.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"48\" x2=\"85.3\" y2=\"56.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"85.3\" y1=\"56.5\" x2=\"74\" y2=\"67.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"100\" cy=\"35\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><path d=\"M133 48.6 Q 100 42.6 67 48.6\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"3\" stroke-dasharray=\"2 5\" stroke-linecap=\"round\"/><line x1=\"126\" y1=\"67.8\" x2=\"131\" y2=\"67.8\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M138 67.8 L131 72.3 L131 63.3 Z\" fill=\"var(--accent)\" stroke=\"none\"/><line x1=\"74\" y1=\"67.8\" x2=\"69\" y2=\"67.8\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M62 67.8 L69 63.3 L69 72.3 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","band_external_rotation":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"104\" y1=\"82\" x2=\"107.6\" y2=\"102.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"107.6\" y1=\"102.7\" x2=\"109.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"109.5\" y1=\"123.6\" x2=\"118.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104\" y1=\"82\" x2=\"100.4\" y2=\"102.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100.4\" y1=\"102.7\" x2=\"98.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"98.5\" y1=\"123.6\" x2=\"89.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104\" y1=\"82\" x2=\"104\" y2=\"50\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104\" y1=\"50\" x2=\"107.5\" y2=\"66.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"107.5\" y1=\"66.6\" x2=\"123.5\" y2=\"66.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"104\" cy=\"37\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104\" y1=\"82\" x2=\"107.6\" y2=\"102.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"107.6\" y1=\"102.7\" x2=\"109.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"109.5\" y1=\"123.6\" x2=\"118.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"82\" x2=\"100.4\" y2=\"102.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100.4\" y1=\"102.7\" x2=\"98.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"98.5\" y1=\"123.6\" x2=\"89.5\" y2=\"123.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"82\" x2=\"104\" y2=\"50\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"50\" x2=\"107.5\" y2=\"66.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"107.5\" y1=\"66.6\" x2=\"117.8\" y2=\"78.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"104\" cy=\"37\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><path d=\"M150 78 Q 133.9 72.4 117.8 78.9\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"3\" stroke-dasharray=\"2 5\" stroke-linecap=\"round\"/><path d=\"M123.5 66.6 A 16 16 0 0 0 117.8 78.9\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M117.8 78.9 L121.1 70.3 L126.8 77.2 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","scap_pushup":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"120\" y1=\"84\" x2=\"140\" y2=\"77.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"140\" y1=\"77.5\" x2=\"159.9\" y2=\"71\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"159.9\" y1=\"71\" x2=\"168.9\" y2=\"71\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"120\" y1=\"84\" x2=\"150.4\" y2=\"74.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"150.4\" y1=\"74.1\" x2=\"156.2\" y2=\"90.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"156.2\" y1=\"90.1\" x2=\"155.7\" y2=\"106.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"162.8\" cy=\"70.1\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"120\" y1=\"78\" x2=\"140\" y2=\"71.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"140\" y1=\"71.5\" x2=\"159.9\" y2=\"65\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"159.9\" y1=\"65\" x2=\"168.9\" y2=\"65\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"120\" y1=\"78\" x2=\"150.4\" y2=\"68.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"150.4\" y1=\"68.1\" x2=\"156.2\" y2=\"84.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"156.2\" y1=\"84.1\" x2=\"155.7\" y2=\"100.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"162.8\" cy=\"64.1\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><line x1=\"70\" y1=\"96\" x2=\"70\" y2=\"85\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M70 78 L74.5 85 L65.5 85 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","back_squat":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"100\" y1=\"66\" x2=\"102.9\" y2=\"86.8\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"102.9\" y1=\"86.8\" x2=\"104.4\" y2=\"107.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104.4\" y1=\"107.7\" x2=\"113.4\" y2=\"107.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"66\" x2=\"97.1\" y2=\"86.8\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"97.1\" y1=\"86.8\" x2=\"95.6\" y2=\"107.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"95.6\" y1=\"107.7\" x2=\"86.6\" y2=\"107.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"66\" x2=\"100\" y2=\"34\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"34\" x2=\"92.8\" y2=\"18.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"92.8\" y1=\"18.6\" x2=\"77.8\" y2=\"13.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"34\" x2=\"107.2\" y2=\"18.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"107.2\" y1=\"18.6\" x2=\"122.2\" y2=\"13.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"100\" cy=\"21\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"84\" x2=\"117.2\" y2=\"96\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"117.2\" y1=\"96\" x2=\"103.7\" y2=\"112.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"103.7\" y1=\"112.1\" x2=\"112.7\" y2=\"112.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"84\" x2=\"82.8\" y2=\"96\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"82.8\" y1=\"96\" x2=\"96.3\" y2=\"112.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"96.3\" y1=\"112.1\" x2=\"87.3\" y2=\"112.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"84\" x2=\"105.6\" y2=\"52.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"105.6\" y1=\"52.5\" x2=\"98.4\" y2=\"37.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"98.4\" y1=\"37.1\" x2=\"83.3\" y2=\"31.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"105.6\" y1=\"52.5\" x2=\"112.7\" y2=\"37.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"112.7\" y1=\"37.1\" x2=\"127.8\" y2=\"31.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"107.8\" cy=\"39.7\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><line x1=\"70\" y1=\"36\" x2=\"130\" y2=\"36\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"67\" y=\"29\" width=\"6\" height=\"14\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><rect x=\"127\" y=\"29\" width=\"6\" height=\"14\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"138\" y1=\"70\" x2=\"138\" y2=\"81\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M138 88 L133.5 81 L142.5 81 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","db_row":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><rect x=\"69\" y=\"74\" width=\"46\" height=\"7\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"75\" y1=\"81\" x2=\"75\" y2=\"94\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"109\" y1=\"81\" x2=\"109\" y2=\"94\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"66\" x2=\"110.5\" y2=\"84.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"110.5\" y1=\"84.2\" x2=\"131.5\" y2=\"84.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"131.5\" y1=\"84.2\" x2=\"140.5\" y2=\"84.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"66\" x2=\"101.8\" y2=\"86.9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"101.8\" y1=\"86.9\" x2=\"102.9\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"102.9\" y1=\"107.9\" x2=\"111.9\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"66\" x2=\"127.7\" y2=\"50\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"127.7\" y1=\"50\" x2=\"142.1\" y2=\"41\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"142.1\" y1=\"41\" x2=\"156\" y2=\"33\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"139.8\" cy=\"45.1\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"66\" x2=\"110.5\" y2=\"84.2\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"110.5\" y1=\"84.2\" x2=\"131.5\" y2=\"84.2\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"131.5\" y1=\"84.2\" x2=\"140.5\" y2=\"84.2\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"66\" x2=\"101.8\" y2=\"86.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"101.8\" y1=\"86.9\" x2=\"102.9\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"102.9\" y1=\"107.9\" x2=\"111.9\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"66\" x2=\"127.7\" y2=\"50\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"127.7\" y1=\"50\" x2=\"136.2\" y2=\"35.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"136.2\" y1=\"35.3\" x2=\"128.2\" y2=\"21.4\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"139.8\" cy=\"45.1\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><rect x=\"76\" y=\"74\" width=\"40\" height=\"7\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"82\" y1=\"81\" x2=\"82\" y2=\"94\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"110\" y1=\"81\" x2=\"110\" y2=\"94\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"122.2\" y1=\"21.4\" x2=\"134.2\" y2=\"21.4\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"119.2\" y=\"17.4\" width=\"5\" height=\"8\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><rect x=\"132.2\" y=\"17.4\" width=\"5\" height=\"8\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"128.2\" y1=\"39.4\" x2=\"128.2\" y2=\"30.4\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M128.2 23.4 L132.7 30.4 L123.7 30.4 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","db_swing":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"104\" y1=\"66\" x2=\"106.2\" y2=\"86.9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"106.2\" y1=\"86.9\" x2=\"102.5\" y2=\"107.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"102.5\" y1=\"107.6\" x2=\"111.5\" y2=\"107.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104\" y1=\"66\" x2=\"130.2\" y2=\"47.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"130.2\" y1=\"47.6\" x2=\"134.6\" y2=\"31.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"134.6\" y1=\"31.2\" x2=\"137.9\" y2=\"15.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"141.7\" cy=\"41.5\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"104\" y1=\"66\" x2=\"105.5\" y2=\"86.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"105.5\" y1=\"86.9\" x2=\"106.2\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"106.2\" y1=\"107.9\" x2=\"115.2\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"66\" x2=\"104\" y2=\"34\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"34\" x2=\"120.9\" y2=\"32.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"120.9\" y1=\"32.5\" x2=\"136.9\" y2=\"32\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"104\" cy=\"21\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><line x1=\"137.9\" y1=\"13.6\" x2=\"137.9\" y2=\"25.6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"133.9\" y=\"10.6\" width=\"8\" height=\"5\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><rect x=\"133.9\" y=\"23.6\" width=\"8\" height=\"5\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"136.9\" y1=\"30\" x2=\"136.9\" y2=\"42\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"132.9\" y=\"27\" width=\"8\" height=\"5\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><rect x=\"132.9\" y=\"40\" width=\"8\" height=\"5\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><path d=\"M127 29.6 A 42 42 0 0 0 148 66\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M148 66 L143.5 58 L152.5 58 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","incline_db_press":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"120\" y1=\"74\" x2=\"103.5\" y2=\"61.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"103.5\" y1=\"61.1\" x2=\"96.3\" y2=\"41.3\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"96.3\" y1=\"41.3\" x2=\"88.1\" y2=\"37.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"120\" y1=\"74\" x2=\"89.1\" y2=\"65.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"89.1\" y1=\"65.7\" x2=\"74.4\" y2=\"74.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"74.4\" y1=\"74.2\" x2=\"60.5\" y2=\"82.2\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"76.9\" cy=\"61.3\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"120\" y1=\"74\" x2=\"103.5\" y2=\"61.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"103.5\" y1=\"61.1\" x2=\"96.3\" y2=\"41.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"96.3\" y1=\"41.3\" x2=\"88.1\" y2=\"37.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"120\" y1=\"74\" x2=\"89.1\" y2=\"65.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"89.1\" y1=\"65.7\" x2=\"83.3\" y2=\"81.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"83.3\" y1=\"81.7\" x2=\"79.1\" y2=\"97.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"76.9\" cy=\"61.3\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><line x1=\"77\" y1=\"82\" x2=\"155\" y2=\"56\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"110\" y1=\"84\" x2=\"110\" y2=\"98\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"151\" y1=\"58\" x2=\"151\" y2=\"98\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"73.1\" y1=\"97.1\" x2=\"85.1\" y2=\"97.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"70.1\" y=\"93.1\" width=\"5\" height=\"8\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><rect x=\"83.1\" y=\"93.1\" width=\"5\" height=\"8\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"60.5\" y1=\"82.2\" x2=\"73.7\" y2=\"92.8\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M79.1 97.1 L70.9 96.3 L76.5 89.3 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","seated_cable_row":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"78\" y1=\"90\" x2=\"99\" y2=\"90.7\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"99\" y1=\"90.7\" x2=\"106.2\" y2=\"110.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"106.2\" y1=\"110.5\" x2=\"114\" y2=\"115\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"78\" y1=\"90\" x2=\"79.1\" y2=\"58\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"79.1\" y1=\"58\" x2=\"96.1\" y2=\"56.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"96.1\" y1=\"56.5\" x2=\"112\" y2=\"57.1\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"79.6\" cy=\"45\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"78\" y1=\"90\" x2=\"99\" y2=\"90.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"99\" y1=\"90.7\" x2=\"104.4\" y2=\"111\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104.4\" y1=\"111\" x2=\"112.2\" y2=\"115.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"78\" y1=\"90\" x2=\"79.1\" y2=\"58\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"79.1\" y1=\"58\" x2=\"93.8\" y2=\"49.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"93.8\" y1=\"49.5\" x2=\"91.1\" y2=\"33.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"78.7\" cy=\"45\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><circle cx=\"168\" cy=\"82\" r=\"6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"168\" cy=\"82\" r=\"1.6\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"168\" y1=\"82\" x2=\"91.1\" y2=\"33.8\" stroke=\"var(--ink-3)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"115.1\" y1=\"33.8\" x2=\"102.1\" y2=\"33.8\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M95.1 33.8 L102.1 29.3 L102.1 38.3 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","plank":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"116\" y1=\"80\" x2=\"136\" y2=\"73.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"136\" y1=\"73.5\" x2=\"155.9\" y2=\"67\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"155.9\" y1=\"67\" x2=\"164.9\" y2=\"67\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"116\" y1=\"80\" x2=\"146.4\" y2=\"70.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"146.4\" y1=\"70.1\" x2=\"157.4\" y2=\"83.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"157.4\" y1=\"83.1\" x2=\"173.4\" y2=\"83.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"158.8\" cy=\"66.1\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><text x=\"150\" y=\"40\" font-size=\"13\" font-weight=\"800\" fill=\"var(--accent)\" font-family=\"sans-serif\">HOLD</text></svg>","pallof_press":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"100\" y1=\"80\" x2=\"105.4\" y2=\"100.3\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"105.4\" y1=\"100.3\" x2=\"109.1\" y2=\"121\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"109.1\" y1=\"121\" x2=\"116.9\" y2=\"116.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"80\" x2=\"94.6\" y2=\"100.3\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"94.6\" y1=\"100.3\" x2=\"90.9\" y2=\"121\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"90.9\" y1=\"121\" x2=\"83.1\" y2=\"116.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"80\" x2=\"100\" y2=\"48\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"48\" x2=\"116.9\" y2=\"46.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"116.9\" y1=\"46.5\" x2=\"132.9\" y2=\"46.5\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><circle cx=\"100\" cy=\"35\" r=\"9\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-dasharray=\"1 7\" opacity=\"0.85\"/><line x1=\"100\" y1=\"80\" x2=\"105.4\" y2=\"100.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"105.4\" y1=\"100.3\" x2=\"109.1\" y2=\"121\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"109.1\" y1=\"121\" x2=\"116.9\" y2=\"116.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"80\" x2=\"94.6\" y2=\"100.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"94.6\" y1=\"100.3\" x2=\"90.9\" y2=\"121\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"90.9\" y1=\"121\" x2=\"83.1\" y2=\"116.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"80\" x2=\"100\" y2=\"48\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"48\" x2=\"117\" y2=\"48\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"117\" y1=\"48\" x2=\"133\" y2=\"48\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"100\" cy=\"35\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><circle cx=\"28\" cy=\"60\" r=\"6\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"28\" cy=\"60\" r=\"1.6\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"28\" y1=\"60\" x2=\"100\" y2=\"48\" stroke=\"var(--ink-3)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"111\" y1=\"48\" x2=\"124\" y2=\"48\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M131 48 L124 52.5 L124 43.5 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","dead_bug":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"104\" y1=\"84\" x2=\"84.3\" y2=\"76.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"84.3\" y1=\"76.8\" x2=\"66.1\" y2=\"87.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"66.1\" y1=\"87.3\" x2=\"58.3\" y2=\"91.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"84\" x2=\"83.7\" y2=\"89.4\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"83.7\" y1=\"89.4\" x2=\"63.4\" y2=\"94.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"63.4\" y1=\"94.9\" x2=\"55.6\" y2=\"99.4\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"104\" y1=\"84\" x2=\"72\" y2=\"82.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"72\" y1=\"82.9\" x2=\"56\" y2=\"77.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"56\" y1=\"77.1\" x2=\"41\" y2=\"71.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"72\" y1=\"82.9\" x2=\"55.6\" y2=\"87.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"55.6\" y1=\"87.3\" x2=\"47.6\" y2=\"73.4\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"59\" cy=\"82.4\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><line x1=\"150\" y1=\"60\" x2=\"159.7\" y2=\"55.1\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M166 52 L161.8 59.2 L157.7 51.1 Z\" fill=\"var(--accent)\" stroke=\"none\"/><line x1=\"60\" y1=\"96\" x2=\"52.7\" y2=\"98.1\" fill=\"none\" stroke=\"var(--accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M46 100 L51.5 93.8 L54 102.4 Z\" fill=\"var(--accent)\" stroke=\"none\"/></svg>","doorway_chest_stretch":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"150\" y1=\"12\" x2=\"150\" y2=\"108\" fill=\"none\" stroke=\"var(--ink-3)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"5\"/><line x1=\"96\" y1=\"80\" x2=\"101.4\" y2=\"100.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"101.4\" y1=\"100.3\" x2=\"105.1\" y2=\"121\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"105.1\" y1=\"121\" x2=\"114.1\" y2=\"121\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"96\" y1=\"80\" x2=\"92.4\" y2=\"100.7\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"92.4\" y1=\"100.7\" x2=\"90.5\" y2=\"121.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"90.5\" y1=\"121.6\" x2=\"99.5\" y2=\"121.6\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"96\" y1=\"80\" x2=\"96\" y2=\"48\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"96\" y1=\"48\" x2=\"110.7\" y2=\"56.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"110.7\" y1=\"56.5\" x2=\"124.6\" y2=\"64.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"96.5\" cy=\"35\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><text x=\"40\" y=\"36\" font-size=\"13\" font-weight=\"800\" fill=\"var(--accent)\" font-family=\"sans-serif\">HOLD</text></svg>","hip_flexor_stretch":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"100\" y1=\"74\" x2=\"113.5\" y2=\"90.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"113.5\" y1=\"90.1\" x2=\"120.7\" y2=\"109.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"120.7\" y1=\"109.8\" x2=\"129.7\" y2=\"109.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"74\" x2=\"86.5\" y2=\"90.1\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"86.5\" y1=\"90.1\" x2=\"97\" y2=\"108.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"97\" y1=\"108.3\" x2=\"88.5\" y2=\"105.2\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100\" y1=\"74\" x2=\"98.9\" y2=\"42\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"98.9\" y1=\"42\" x2=\"100.4\" y2=\"59\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"100.4\" y1=\"59\" x2=\"101.2\" y2=\"74.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"98.9\" y1=\"42\" x2=\"97.4\" y2=\"59\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"97.4\" y1=\"59\" x2=\"96.6\" y2=\"74.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"98.4\" cy=\"29\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><text x=\"150\" y=\"36\" font-size=\"13\" font-weight=\"800\" fill=\"var(--accent)\" font-family=\"sans-serif\">HOLD</text></svg>","hamstring_stretch":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><rect x=\"130\" y=\"86\" width=\"40\" height=\"7\" rx=\"2\" fill=\"var(--ink-3)\" stroke=\"none\"/><line x1=\"92\" y1=\"66\" x2=\"94.2\" y2=\"86.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"94.2\" y1=\"86.9\" x2=\"95.3\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"95.3\" y1=\"107.9\" x2=\"104.3\" y2=\"107.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"92\" y1=\"66\" x2=\"110.2\" y2=\"76.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"110.2\" y1=\"76.5\" x2=\"128.4\" y2=\"87\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"128.4\" y1=\"87\" x2=\"137.4\" y2=\"87\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"92\" y1=\"66\" x2=\"116.5\" y2=\"45.4\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"116.5\" y1=\"45.4\" x2=\"131.2\" y2=\"36.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"131.2\" y1=\"36.9\" x2=\"145.1\" y2=\"28.9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"127.8\" cy=\"38.9\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><text x=\"40\" y=\"40\" font-size=\"13\" font-weight=\"800\" fill=\"var(--accent)\" font-family=\"sans-serif\">HOLD</text></svg>","childs_pose":"<svg viewBox=\"0 0 200 120\" width=\"100%\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\"><line x1=\"10\" y1=\"108\" x2=\"190\" y2=\"108\" stroke=\"var(--line)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"116\" y1=\"86\" x2=\"96.3\" y2=\"78.8\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"96.3\" y1=\"78.8\" x2=\"78.1\" y2=\"89.3\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"78.1\" y1=\"89.3\" x2=\"72.3\" y2=\"96.2\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"116\" y1=\"86\" x2=\"143.7\" y2=\"70\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"143.7\" y1=\"70\" x2=\"158.7\" y2=\"62\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><line x1=\"158.7\" y1=\"62\" x2=\"172.9\" y2=\"54.5\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"155.8\" cy=\"65.1\" r=\"9\" fill=\"none\" stroke=\"var(--ink)\" stroke-width=\"4\"/><text x=\"40\" y=\"40\" font-size=\"13\" font-weight=\"800\" fill=\"var(--accent)\" font-family=\"sans-serif\">HOLD</text></svg>"}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var WORKOUT = JSON.parse(document.getElementById("workout-data").textContent);
+  // Form-demo SVGs keyed by exercise id. Scoped to this workout's exercises so
+  // each push stays lean (full set lives in the companion exercise_demos.json).
+  // A workout may also carry a per-exercise `demo` inline; that wins if present.
+  var DEMOS = {};
+  try {
+    var demoEl = document.getElementById("exercise-demos");
+    if (demoEl) DEMOS = JSON.parse(demoEl.textContent) || {};
+  } catch (e) {}
+  var STATE_KEY = "wt:v1:" + WORKOUT.id;
+  var THEME_KEY = "wt:theme";
+
+  // ---------- state ----------
+  var state = loadState();
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STATE_KEY);
+      if (raw) { var s = JSON.parse(raw); if (s && s.v === 1) return s; }
+    } catch (e) {}
+    return { v: 1, checks: {}, edits: {}, skipEx: {}, skipBlock: {} };
+  }
+  function saveState() {
+    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  // ---------- helpers ----------
+  var FMT_LABELS = { straight: "Straight sets", circuit: "Circuit", emom: "EMOM", amrap: "AMRAP", "for-time": "For time" };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function exKey(bi, ei) { return WORKOUT.blocks[bi].id + "|" + ei; }
+  function setKey(bi, ei, si) { return WORKOUT.blocks[bi].id + "|" + ei + "|" + si; }
+
+  function isBlockSkipped(bi) { return !!state.skipBlock[WORKOUT.blocks[bi].id]; }
+  function isExSkipped(bi, ei) { return isBlockSkipped(bi) || !!state.skipEx[exKey(bi, ei)]; }
+  function isSetDone(bi, ei, si) { return !!state.checks[setKey(bi, ei, si)]; }
+
+  function getVal(bi, ei, si, ex) {
+    var e = state.edits[setKey(bi, ei, si)] || {};
+    var reps = e.reps != null ? e.reps : ex.reps;
+    var weight = e.weight !== undefined ? e.weight : ex.weight_lb;
+    return { reps: reps, weight: weight };
+  }
+
+  function fmtDate(iso) {
+    var p = iso.split("-");
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  }
+
+  // seconds estimate for a single active exercise across the block's rounds
+  function exSeconds(ex, rounds) {
+    var perSet = ex.is_timed ? Number(ex.reps || 30) : Number(ex.reps || 8) * 3.5;
+    var rest = Number(ex.rest_seconds || 0);
+    return rounds * perSet + Math.max(0, rounds) * rest;
+  }
+  function blockSeconds(bi) {
+    var b = WORKOUT.blocks[bi];
+    if (isBlockSkipped(bi)) return 0;
+    var s = 0;
+    b.exercises.forEach(function (ex, ei) {
+      if (state.skipEx[exKey(bi, ei)]) return;
+      s += exSeconds(ex, b.rounds);
+    });
+    return s;
+  }
+  function mins(sec) { return Math.max(1, Math.round(sec / 60)); }
+
+  // progress across active sets
+  function progress() {
+    var done = 0, total = 0;
+    WORKOUT.blocks.forEach(function (b, bi) {
+      if (isBlockSkipped(bi)) return;
+      b.exercises.forEach(function (ex, ei) {
+        if (isExSkipped(bi, ei)) return;
+        for (var si = 0; si < b.rounds; si++) {
+          total++;
+          if (isSetDone(bi, ei, si)) done++;
+        }
+      });
+    });
+    return { done: done, total: total };
+  }
+
+  // current position = first active exercise with an incomplete active set
+  function currentEx() {
+    for (var bi = 0; bi < WORKOUT.blocks.length; bi++) {
+      if (isBlockSkipped(bi)) continue;
+      var b = WORKOUT.blocks[bi];
+      for (var ei = 0; ei < b.exercises.length; ei++) {
+        if (isExSkipped(bi, ei)) continue;
+        for (var si = 0; si < b.rounds; si++) {
+          if (!isSetDone(bi, ei, si)) return bi + "|" + ei;
+        }
+      }
+    }
+    return null; // all done
+  }
+
+  // ---------- SVG snippets ----------
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var CHECK_SM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.6" r="1" fill="currentColor" stroke="none"/></svg>';
+  var CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>';
+  var IC_TIMER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M9 2h6M19 5l1.5 1.5"/></svg>';
+  var IC_REST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a3 3 0 0 1 0 6h-1M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM8 3v2M11 3v2M14 3v2"/></svg>';
+  var IC_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>';
+  var IC_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+  var IC_RESET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.9"/><polyline points="3 3 3 8 8 8"/></svg>';
+  var IC_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+
+  // ---------- render ----------
+  var blocksEl = document.getElementById("blocks");
+  var curKey = null;
+
+  function render() {
+    curKey = currentEx();
+    blocksEl.innerHTML = "";
+    WORKOUT.blocks.forEach(function (b, bi) { blocksEl.appendChild(renderBlock(b, bi)); });
+    renderTopbar();
+  }
+
+  function renderTopbar() {
+    document.getElementById("focus-lbl").textContent = WORKOUT.focus;
+    document.getElementById("fmt-eyebrow").textContent = FMT_LABELS[WORKOUT.format] || WORKOUT.format;
+    document.getElementById("date-lbl").textContent = fmtDate(WORKOUT.date);
+    var p = progress();
+    document.getElementById("done-count").textContent = p.done;
+    document.getElementById("total-count").textContent = p.total;
+    document.getElementById("bar-fill").style.width = (p.total ? (p.done / p.total * 100) : 0) + "%";
+    var totalSec = 0;
+    WORKOUT.blocks.forEach(function (b, bi) { totalSec += blockSeconds(bi); });
+    document.getElementById("est-total").textContent = mins(totalSec);
+    document.getElementById("alldone").classList.toggle("show", p.total > 0 && p.done === p.total);
+  }
+
+  function renderBlock(b, bi) {
+    var skipped = isBlockSkipped(bi);
+    var el = document.createElement("section");
+    el.className = "block" + (skipped ? " skipped" : "");
+    el.dataset.block = bi;
+
+    var head = document.createElement("div");
+    head.className = "block-head";
+    var tags = '<span class="tag fmt">' + (FMT_LABELS[b.kind] || b.kind) + '</span>';
+    if (b.rounds > 1) tags += '<span class="tag">' + b.rounds + ' rounds</span>';
+    tags += '<span class="tag time">' + CLOCK + '~' + mins(blockSeconds(bi)) + ' min</span>';
+    head.innerHTML =
+      '<div class="block-head-row">' +
+        '<div class="block-title"><h2>' + esc(b.title) + '</h2><div class="block-tags">' + tags + '</div></div>' +
+        '<button class="skipbtn" type="button">' + (skipped ? "Skipped" : "Skip") + '</button>' +
+      '</div>' +
+      (b.note ? '<p class="block-note">' + esc(b.note) + '</p>' : '');
+    head.querySelector(".skipbtn").addEventListener("click", function () {
+      if (skipped) delete state.skipBlock[b.id]; else state.skipBlock[b.id] = true;
+      saveState(); render();
+    });
+
+    // block-format clock (EMOM / AMRAP / for-time) — additive, never gates set check-offs
+    var cc = blockClockConfig(b);
+    if (cc && !skipped) {
+      var clkId = "clk-" + bi;
+      var starts = [];
+      var cfg;
+      if (cc.kind === "emom") {
+        cfg = { elId: clkId, kind: "emom", interval: cc.interval, totalIntervals: cc.totalIntervals, label: "EMOM" };
+        starts.push({ icon: IC_TIMER, text: "Start EMOM · " + cc.totalIntervals + " × " + clockStr(cc.interval), cfg: cfg });
+      } else if (cc.kind === "amrap") {
+        cfg = { elId: clkId, kind: "amrap", duration: cc.duration, label: "AMRAP" };
+        starts.push({ icon: IC_TIMER, text: "Start AMRAP · " + clockStr(cc.duration) + " cap", cfg: cfg });
+      } else {
+        cfg = { elId: clkId, kind: "fortime", cap: cc.cap, label: "For time" };
+        starts.push({ icon: IC_TIMER, text: cc.cap > 0 ? "Start · cap " + clockStr(cc.cap) : "Start stopwatch", cfg: cfg });
+      }
+      head.appendChild(buildTimerContainer(clkId, starts));
+    }
+    el.appendChild(head);
+
+    var list = document.createElement("div");
+    list.className = "ex-list";
+    b.exercises.forEach(function (ex, ei) { list.appendChild(renderEx(b, bi, ex, ei)); });
+    el.appendChild(list);
+    return el;
+  }
+
+  function renderEx(b, bi, ex, ei) {
+    var skipped = isExSkipped(bi, ei);
+    var isCur = curKey === (bi + "|" + ei);
+    var el = document.createElement("div");
+    el.className = "ex" + (skipped ? " skipped" : "") + (isCur && !skipped ? " current" : "");
+    el.id = "ex-" + bi + "-" + ei;
+
+    // head
+    var head = document.createElement("div");
+    head.className = "ex-head";
+    var chips = "";
+    if (isCur && !skipped) chips += '<span class="chip now">Now</span>';
+    if (ex.shoulder_pain_flag >= 2) chips += '<span class="chip warn">Shoulder</span>';
+    var nameBtn = document.createElement("button");
+    nameBtn.className = "ex-name";
+    nameBtn.type = "button";
+    nameBtn.innerHTML = '<span>' + esc(ex.name) + '</span>' + chips + '<span class="info">' + INFO + '</span>';
+    nameBtn.addEventListener("click", function () { openDetail(ex); });
+    head.appendChild(nameBtn);
+
+    var skipBtn = document.createElement("button");
+    skipBtn.className = "ex-skip";
+    skipBtn.type = "button";
+    skipBtn.setAttribute("aria-label", skipped ? "Un-skip exercise" : "Skip exercise");
+    skipBtn.textContent = skipped ? "↺" : "✕";
+    skipBtn.addEventListener("click", function () {
+      if (state.skipEx[exKey(bi, ei)]) delete state.skipEx[exKey(bi, ei)];
+      else state.skipEx[exKey(bi, ei)] = true;
+      saveState(); render();
+    });
+    head.appendChild(skipBtn);
+    el.appendChild(head);
+
+    // body (target + sets)
+    var body = document.createElement("div");
+    body.className = "ex-body";
+    var tgt = ex.is_timed ? (ex.reps + "s hold") : (ex.reps + " reps");
+    if (ex.weight_lb != null) tgt += " · " + ex.weight_lb + " lb";
+    if (ex.per_side) tgt += " · each side";
+    if (b.rounds > 1) tgt = b.rounds + " × " + tgt;
+    body.innerHTML = '<p class="ex-target">' + esc(tgt) + '</p>';
+
+    var sets = document.createElement("div");
+    sets.className = "sets";
+    for (var si = 0; si < b.rounds; si++) {
+      sets.appendChild(renderSet(b, bi, ex, ei, si));
+    }
+    body.appendChild(sets);
+
+    // rest + hold timers for this exercise — additive, never gates set check-offs
+    var telId = "tmr-" + bi + "-" + ei;
+    var tstarts = [];
+    if (ex.is_timed) {
+      var holdSec = Number(ex.reps) || 30;
+      tstarts.push({ icon: IC_TIMER, text: "Hold " + clockStr(holdSec),
+        cfg: { elId: telId, kind: "hold", duration: holdSec, label: "Hold" } });
+    }
+    var restSec = Number(ex.rest_seconds) || 0;
+    if (restSec > 0) {
+      tstarts.push({ icon: IC_REST, text: "Rest " + clockStr(restSec),
+        cfg: { elId: telId, kind: "rest", duration: restSec, label: "Rest" } });
+    }
+    if (tstarts.length || (active && active.elId === telId)) {
+      body.appendChild(buildTimerContainer(telId, tstarts));
+    }
+
+    el.appendChild(body);
+    return el;
+  }
+
+  function renderSet(b, bi, ex, ei, si) {
+    var done = isSetDone(bi, ei, si);
+    var v = getVal(bi, ei, si, ex);
+    var row = document.createElement("div");
+    row.className = "set" + (done ? " done" : "");
+
+    var label = b.rounds > 1 ? (b.kind === "circuit" ? "R" + (si + 1) : "SET " + (si + 1)) : "DO";
+    row.innerHTML = '<span class="set-label num">' + label + '</span>';
+
+    var fields = document.createElement("div");
+    fields.className = "fields";
+    // reps/time field
+    fields.appendChild(makeField(ex.is_timed ? "Time" : "Reps", v.reps, ex.is_timed ? "s" : "", false,
+      function (nv) { commitEdit(bi, ei, si, ex, "reps", nv); }));
+    // weight field (hidden for pure timed bodyweight holds unless a weight exists)
+    if (!(ex.is_timed && v.weight == null)) {
+      fields.appendChild(makeField("Weight", v.weight, "lb", true,
+        function (nv) { commitEdit(bi, ei, si, ex, "weight", nv); }));
+    }
+    row.appendChild(fields);
+
+    var check = document.createElement("button");
+    check.className = "check";
+    check.type = "button";
+    check.setAttribute("aria-label", "Mark set done");
+    check.setAttribute("aria-pressed", done ? "true" : "false");
+    check.innerHTML = CHECK;
+    row.appendChild(check);
+
+    function toggle() {
+      if (done) delete state.checks[setKey(bi, ei, si)];
+      else state.checks[setKey(bi, ei, si)] = true;
+      saveState(); render();
+    }
+    check.addEventListener("click", function (e) { e.stopPropagation(); toggle(); });
+    // tap anywhere on the row (except editable fields) toggles the set
+    row.addEventListener("click", function (e) {
+      if (e.target.closest(".field") || e.target.closest("input")) return;
+      toggle();
+    });
+    return row;
+  }
+
+  // an inline tap-to-edit field
+  function makeField(label, value, unit, isWeight, onCommit) {
+    var wrap = document.createElement("button");
+    wrap.className = "field";
+    wrap.type = "button";
+    var display = document.createElement("span");
+    display.className = "flabel";
+    display.textContent = label;
+    var val = document.createElement("span");
+    val.className = "fval";
+    paint();
+
+    function paint() {
+      if (value == null || value === "") {
+        val.classList.add("empty");
+        val.textContent = isWeight ? "BW" : "—";
+      } else {
+        val.classList.remove("empty");
+        val.innerHTML = '<span class="num">' + esc(String(value)) + '</span>' + (unit ? '<span class="unit">' + unit + '</span>' : '');
+      }
+    }
+
+    wrap.appendChild(display);
+    wrap.appendChild(val);
+
+    wrap.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (wrap.querySelector("input")) return;
+      var input = document.createElement("input");
+      input.type = "text";
+      input.inputMode = "decimal";
+      input.value = (value == null ? "" : value);
+      input.setAttribute("aria-label", label);
+      val.replaceWith(input);
+      input.focus();
+      input.select();
+
+      function finish() {
+        var raw = input.value.trim();
+        var nv;
+        if (raw === "") nv = isWeight ? null : value; // blank weight = bodyweight; blank reps keeps old
+        else { var n = parseFloat(raw); nv = isNaN(n) ? value : n; }
+        value = nv;
+        var fresh = document.createElement("span");
+        fresh.className = "fval";
+        input.replaceWith(fresh);
+        val = fresh;
+        paint();
+        onCommit(nv);
+      }
+      input.addEventListener("blur", finish);
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") { ev.preventDefault(); input.blur(); }
+      });
+    });
+    return wrap;
+  }
+
+  function commitEdit(bi, ei, si, ex, kind, nv) {
+    var k = setKey(bi, ei, si);
+    var e = state.edits[k] || {};
+    if (kind === "reps") e.reps = nv;
+    else e.weight = nv;
+    state.edits[k] = e;
+    saveState();
+    // no full re-render needed; field repaints itself. topbar est may change:
+    renderTopbar();
+  }
+
+  // ---------- detail sheet ----------
+  var detailScrim = document.getElementById("detail-scrim");
+  var demoSlot = document.getElementById("d-demo");
+  var demoCap = document.getElementById("d-demo-cap");
+  var DEMO_PLACEHOLDER = demoSlot.innerHTML; // keep the original "coming soon" fallback
+
+  // Inject this exercise's form drawing. Inline ex.demo wins; else the embedded
+  // DEMOS map (keyed by id); else the placeholder. Only accepts <svg …> strings.
+  function renderDemo(ex) {
+    var svg = (typeof ex.demo === "string" && ex.demo) ? ex.demo : DEMOS[ex.id];
+    if (typeof svg === "string" && /^\s*<svg[\s>]/i.test(svg)) {
+      demoSlot.classList.add("has-demo");
+      demoSlot.innerHTML = svg;
+      demoCap.style.display = "flex";
+    } else {
+      demoSlot.classList.remove("has-demo");
+      demoSlot.innerHTML = DEMO_PLACEHOLDER;
+      demoCap.style.display = "none";
+    }
+  }
+
+  function openDetail(ex) {
+    document.getElementById("d-name").textContent = ex.name;
+    var chips = '<span class="tag">' + esc(ex.muscle_group) + '</span>';
+    if (ex.equipment) chips += '<span class="tag">' + esc(ex.equipment) + '</span>';
+    if (ex.shoulder_pain_flag >= 2) chips += '<span class="chip warn">Shoulder-aware</span>';
+    document.getElementById("d-chips").innerHTML = chips;
+    document.getElementById("d-setup").textContent = ex.setup || "";
+    document.getElementById("d-cue").textContent = ex.cue || "";
+    document.getElementById("d-mistake").textContent = ex.mistake || "";
+    document.getElementById("d-yt").href = ex.youtube || "#";
+    renderDemo(ex);
+    openScrim(detailScrim);
+  }
+  document.getElementById("d-close").addEventListener("click", function () { closeScrim(detailScrim); });
+
+  // ---------- map ----------
+  var mapScrim = document.getElementById("map-scrim");
+  var mapBody = document.getElementById("map-body");
+  document.getElementById("map-btn").addEventListener("click", function () { buildMap(); openScrim(mapScrim); });
+  document.getElementById("map-close").addEventListener("click", function () { closeScrim(mapScrim); });
+
+  function buildMap() {
+    curKey = currentEx();
+    mapBody.innerHTML = "";
+    WORKOUT.blocks.forEach(function (b, bi) {
+      var wrap = document.createElement("div");
+      wrap.className = "map-block" + (isBlockSkipped(bi) ? " skipped" : "");
+      wrap.innerHTML = '<h3>' + esc(b.title) + ' <span class="mb-est">· ~' + mins(blockSeconds(bi)) + ' min</span></h3>';
+      b.exercises.forEach(function (ex, ei) {
+        var skipped = isExSkipped(bi, ei);
+        var isCur = curKey === (bi + "|" + ei);
+        // done when all its active sets are checked
+        var allDone = true;
+        for (var si = 0; si < b.rounds; si++) { if (!isSetDone(bi, ei, si)) { allDone = false; break; } }
+        var btn = document.createElement("button");
+        btn.className = "map-ex" + (skipped ? " skipped" : (allDone ? " done" : "")) + (isCur && !skipped ? " current" : "");
+        btn.type = "button";
+        var doneSets = 0; for (var s2 = 0; s2 < b.rounds; s2++) if (isSetDone(bi, ei, s2)) doneSets++;
+        btn.innerHTML =
+          '<span class="dot">' + ((allDone && !skipped) ? CHECK_SM : "") + '</span>' +
+          '<span class="mx-name">' + esc(ex.name) + '</span>' +
+          '<span class="mx-meta num">' + (skipped ? "skipped" : (doneSets + "/" + b.rounds)) + '</span>';
+        btn.addEventListener("click", function () {
+          closeScrim(mapScrim);
+          var target = document.getElementById("ex-" + bi + "-" + ei);
+          if (target) { target.scrollIntoView({ behavior: "smooth", block: "center" }); }
+        });
+        wrap.appendChild(btn);
+      });
+      mapBody.appendChild(wrap);
+    });
+  }
+
+  // ---------- scrim mechanics ----------
+  function openScrim(scrim) { scrim.classList.add("show"); document.body.style.overflow = "hidden"; }
+  function closeScrim(scrim) { scrim.classList.remove("show"); document.body.style.overflow = ""; }
+  [mapScrim, detailScrim].forEach(function (scrim) {
+    scrim.addEventListener("click", function (e) { if (e.target === scrim) closeScrim(scrim); });
+  });
+
+  // ---------- theme ----------
+  var themeBtn = document.getElementById("theme-btn");
+  var themeIcon = document.getElementById("theme-icon");
+  var SUN = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  // Effective theme = explicit attr if present (set by us or the artifact viewer),
+  // otherwise follow the OS via the media query. We only stamp data-theme when Austin
+  // taps our own toggle, so we never fight the claude.ai viewer's theme on load.
+  function effectiveTheme() {
+    var attr = document.documentElement.getAttribute("data-theme");
+    if (attr === "dark" || attr === "light") return attr;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  function setThemeIcon() { themeIcon.innerHTML = effectiveTheme() === "dark" ? MOON : SUN; }
+  function initTheme() {
+    var t;
+    try { t = localStorage.getItem(THEME_KEY); } catch (e) {}
+    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+    setThemeIcon();
+  }
+  themeBtn.addEventListener("click", function () {
+    var t = effectiveTheme() === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+    document.documentElement.setAttribute("data-theme", t);
+    setThemeIcon();
+  });
+  try {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+      var t; try { t = localStorage.getItem(THEME_KEY); } catch (e) {}
+      if (t !== "dark" && t !== "light") setThemeIcon();
+    });
+  } catch (e) {}
+
+  // ---------- timers (Sprint 3) ----------
+  // ONE active timer at a time (starting a new one replaces the old). State is
+  // ephemeral — never persisted — so a reload clears any running clock. Timers
+  // are purely additive UI: they never block checking off a set or advancing.
+  var active = null;
+  var timerInt = null;
+
+  function nowMs() { return Date.now(); }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  function clockStr(sec) { // count-up / exact values: floor
+    sec = Math.max(0, Math.floor(sec + 0.0001));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function clockDown(sec) { // remaining on a countdown: ceil so it reads full at t=0
+    sec = Math.max(0, Math.ceil(sec - 0.0001));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+  function elapsedSec(t) {
+    var ms = t.elapsedBefore + (t.running ? (nowMs() - t.startedAt) : 0);
+    return ms / 1000;
+  }
+
+  // --- audio: lazy AudioContext, unlocked on the first (user-gesture) start ---
+  var actx = null;
+  function ensureAudio() {
+    try {
+      if (!actx) { var AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+      if (actx && actx.state === "suspended") actx.resume();
+    } catch (e) {}
+  }
+  function beep(times) {
+    try {
+      if (!actx) return;
+      var n = times || 1, t0 = actx.currentTime;
+      for (var i = 0; i < n; i++) {
+        var o = actx.createOscillator(), g = actx.createGain(), s = t0 + i * 0.2;
+        o.type = "sine";
+        o.frequency.value = (n > 1 && i === n - 1) ? 1175 : 880; // last beep rings higher
+        g.gain.setValueAtTime(0.0001, s);
+        g.gain.exponentialRampToValueAtTime(0.34, s + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, s + 0.17);
+        o.connect(g); g.connect(actx.destination);
+        o.start(s); o.stop(s + 0.19);
+      }
+    } catch (e) {}
+  }
+
+  // --- config from data ---
+  function blockClockConfig(b) {
+    if (b.kind === "emom") return { kind: "emom", interval: Number(b.interval_seconds) || 60, totalIntervals: Number(b.rounds) || 10 };
+    if (b.kind === "amrap") return { kind: "amrap", duration: Number(b.cap_seconds) || (Number(b.rounds) ? Number(b.rounds) * 60 : 300) };
+    if (b.kind === "for-time") return { kind: "fortime", cap: Number(b.cap_seconds) || 0 };
+    return null;
+  }
+
+  // --- lifecycle ---
+  function startTimer(cfg) {
+    ensureAudio();
+    active = {
+      elId: cfg.elId, kind: cfg.kind, label: cfg.label,
+      duration: cfg.duration || 0, interval: cfg.interval || 60, totalIntervals: cfg.totalIntervals || 0, cap: cfg.cap || 0,
+      running: true, startedAt: nowMs(), elapsedBefore: 0, rounds: 0, done: false, lastBoundary: 0
+    };
+    ensureTick();
+    render();
+  }
+  function ensureTick() { if (!timerInt) timerInt = setInterval(tick, 200); }
+
+  function adjustTimer(delta) {
+    if (!active) return;
+    ensureAudio();
+    if (active.kind === "emom") active.interval = clamp(active.interval + delta, 15, 900);
+    else if (active.kind === "fortime") { if (active.cap > 0) active.cap = clamp(active.cap + delta, 15, 7200); }
+    else {
+      active.duration = clamp(active.duration + delta, 5, 7200);
+      if (active.done && active.duration - elapsedSec(active) > 0) active.done = false;
+    }
+    render();
+  }
+  function addRound(delta) { if (!active) return; ensureAudio(); active.rounds = Math.max(0, active.rounds + delta); render(); }
+  function timerCmd(c) {
+    if (!active) return;
+    ensureAudio();
+    if (c === "toggle") {
+      if (active.running) { active.elapsedBefore += nowMs() - active.startedAt; active.running = false; }
+      else { active.startedAt = nowMs(); active.running = true; active.done = false; ensureTick(); }
+    } else if (c === "restart") {
+      active.elapsedBefore = 0; active.startedAt = nowMs(); active.running = true; active.done = false; active.lastBoundary = 0; active.rounds = 0; ensureTick();
+    } else if (c === "finish") { // for-time: freeze the finishing time
+      active.elapsedBefore = elapsedSec(active) * 1000; active.running = false; active.done = true;
+    } else if (c === "stop") { active = null; }
+    render();
+  }
+
+  // --- ticking ---
+  function fmtEl() { return active ? document.getElementById(active.elId) : null; }
+  function tick() {
+    if (!active || !active.running) return;
+    var t = active, e = elapsedSec(t);
+    if (t.kind === "rest" || t.kind === "hold" || t.kind === "amrap") {
+      if (t.duration - e <= 0) { t.done = true; t.running = false; t.elapsedBefore = t.duration * 1000; beep(3); render(); return; }
+      paintLive();
+    } else if (t.kind === "emom") {
+      var cur = Math.floor(e / t.interval);
+      if (cur > t.lastBoundary && cur < t.totalIntervals) { t.lastBoundary = cur; beep(1); }
+      if (cur >= t.totalIntervals) { t.done = true; t.running = false; beep(3); render(); return; }
+      paintLive();
+    } else if (t.kind === "fortime") {
+      if (t.cap > 0 && t.cap - e <= 0) { t.done = true; t.running = false; t.elapsedBefore = t.cap * 1000; beep(3); render(); return; }
+      paintLive();
+    }
+  }
+
+  // --- display model (shared by build + tick repaint) ---
+  function liveDisplay(t) {
+    var e = elapsedSec(t);
+    var d = { cls: "timer-live", label: t.label, sub: "", clock: "" };
+    if (!t.running && !t.done) d.cls += " paused";
+    if (t.done) d.cls += " done";
+    if (t.kind === "rest" || t.kind === "hold") {
+      d.clock = clockDown(Math.max(0, t.duration - e));
+      if (t.done) { d.label = (t.kind === "hold" ? "Hold" : "Rest") + " done"; d.clock = clockStr(0); }
+    } else if (t.kind === "amrap") {
+      d.clock = clockDown(Math.max(0, t.duration - e));
+      d.sub = t.done ? "TIME" : "AMRAP";
+      if (t.done) d.label = "Time";
+    } else if (t.kind === "emom") {
+      var cur = Math.floor(e / t.interval); if (cur > t.totalIntervals) cur = t.totalIntervals;
+      d.clock = clockDown(t.done ? 0 : (t.interval - (e - cur * t.interval)));
+      d.sub = (t.done ? "DONE " : "MIN ") + Math.min(t.done ? cur : cur + 1, t.totalIntervals) + "/" + t.totalIntervals;
+      if (t.done) d.label = "EMOM done";
+    } else if (t.kind === "fortime") {
+      d.clock = clockStr(e);
+      if (t.done) d.label = "Finished";
+    }
+    return d;
+  }
+  function hasRounds(t) { return t.kind === "emom" || t.kind === "amrap" || t.kind === "fortime"; }
+  function hasAdjust(t) { return t.kind !== "fortime" || t.cap > 0; }
+
+  function buildLivePanel(t) {
+    var wrap = document.createElement("div");
+    var d = liveDisplay(t);
+    wrap.className = d.cls;
+    var topSub = d.sub ? '<span class="tl-sub num">' + esc(d.sub) + "</span>" : "";
+    var adjL = hasAdjust(t) ? '<button class="tl-adj" data-a="-15" type="button">−15</button>' : "";
+    var adjR = hasAdjust(t) ? '<button class="tl-adj" data-a="15" type="button">+15</button>' : "";
+    var rounds = hasRounds(t)
+      ? '<div class="tl-actions">' +
+          '<button class="tl-round" data-r="1" type="button">+1 round · <b class="num">' + t.rounds + "</b></button>" +
+          '<button class="tl-adj tl-minus" data-r="-1" type="button">−1</button>' +
+        "</div>"
+      : "";
+    var actions = '<div class="tl-actions">';
+    if (t.done) {
+      actions += '<button class="tl-btn primary" data-c="restart" type="button">' + IC_RESET + "Again</button>";
+      actions += '<button class="tl-btn" data-c="stop" type="button">Done</button>';
+    } else if (t.kind === "fortime") {
+      actions += '<button class="tl-btn primary" data-c="toggle" type="button">' + (t.running ? IC_PAUSE + "Pause" : IC_PLAY + "Resume") + "</button>";
+      actions += '<button class="tl-btn" data-c="finish" type="button">Finish</button>';
+      actions += '<button class="tl-btn tl-minus" data-c="stop" type="button">' + IC_RESET + "</button>";
+    } else {
+      actions += '<button class="tl-btn primary" data-c="toggle" type="button">' + (t.running ? IC_PAUSE + "Pause" : IC_PLAY + "Resume") + "</button>";
+      actions += '<button class="tl-btn" data-c="restart" type="button">' + IC_RESET + "</button>";
+      actions += '<button class="tl-btn tl-minus" data-c="stop" type="button">' + IC_X + "</button>";
+    }
+    actions += "</div>";
+    wrap.innerHTML =
+      '<div class="tl-top"><span class="tl-label">' + esc(d.label) + "</span>" + topSub + "</div>" +
+      '<div class="tl-main">' + adjL + '<div class="tl-clock num">' + d.clock + "</div>" + adjR + "</div>" +
+      rounds + actions;
+    wrap.querySelectorAll("[data-a]").forEach(function (b) { b.addEventListener("click", function (e) { e.stopPropagation(); adjustTimer(Number(b.dataset.a)); }); });
+    wrap.querySelectorAll("[data-r]").forEach(function (b) { b.addEventListener("click", function (e) { e.stopPropagation(); addRound(Number(b.dataset.r)); }); });
+    wrap.querySelectorAll("[data-c]").forEach(function (b) { b.addEventListener("click", function (e) { e.stopPropagation(); timerCmd(b.dataset.c); }); });
+    return wrap;
+  }
+
+  // light repaint used by the tick loop (no full re-render while counting)
+  function paintLive() {
+    var el = fmtEl(); if (!el) return;
+    var panel = el.querySelector(".timer-live");
+    if (!panel) { render(); return; }
+    var d = liveDisplay(active);
+    if (panel.className !== d.cls) panel.className = d.cls;
+    var clk = panel.querySelector(".tl-clock"); if (clk) clk.textContent = d.clock;
+    var sub = panel.querySelector(".tl-sub"); if (sub) sub.textContent = d.sub;
+    var lbl = panel.querySelector(".tl-label"); if (lbl) lbl.textContent = d.label;
+  }
+
+  // idle pills OR the live panel, depending on whether this element owns the active timer
+  function buildTimerContainer(elId, starts) {
+    var el = document.createElement("div");
+    el.id = elId; el.className = "timer-wrap";
+    if (active && active.elId === elId) { el.appendChild(buildLivePanel(active)); return el; }
+    if (!starts || !starts.length) return el;
+    var row = document.createElement("div");
+    row.className = "timer-row";
+    starts.forEach(function (s) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "timer-pill";
+      b.innerHTML = s.icon + "<span>" + esc(s.text) + "</span>";
+      b.addEventListener("click", function (e) { e.stopPropagation(); startTimer(s.cfg); });
+      row.appendChild(b);
+    });
+    el.appendChild(row);
+    return el;
+  }
+
+  // ---------- workout summary (Sprint 5) ----------
+  // Builds a compact, parse-friendly text block of the session AS PERFORMED
+  // (per-set actuals incl. tap-to-edit values, skips, duration estimate, feel
+  // field). Copy is iOS-safe: Clipboard API first, execCommand fallback, and the
+  // text lives in a selectable readonly textarea so hand-select always works.
+  function summarySlug(s) {
+    return String(s || "workout").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "workout";
+  }
+  function dowLabel(iso) {
+    try {
+      var p = iso.split("-");
+      return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).toLocaleDateString(undefined, { weekday: "short" });
+    } catch (e) { return ""; }
+  }
+  // one set -> token. reps or (is_timed) seconds; @Xlb load; no @ = bodyweight.
+  function setToken(ex, v) {
+    var out = ex.is_timed ? ((v.reps == null ? "?" : v.reps) + "s") : (v.reps == null ? "?" : String(v.reps));
+    if (v.weight != null) out += "@" + v.weight + "lb";
+    return out;
+  }
+  function buildSummary() {
+    var L = [];
+    L.push("🏋️ WORKOUT SUMMARY");
+    L.push("Paste this whole block back into any Claude chat to log the workout.");
+    L.push("(✓ done · ○ not done · weights in lb, @ = load, s = seconds held)");
+    L.push("");
+    L.push("Date: " + WORKOUT.date + (dowLabel(WORKOUT.date) ? " (" + dowLabel(WORKOUT.date) + ")" : ""));
+    L.push("Focus: " + WORKOUT.focus);
+    L.push("Format: " + (FMT_LABELS[WORKOUT.format] || WORKOUT.format));
+    var totalSec = 0;
+    WORKOUT.blocks.forEach(function (b, bi) { totalSec += blockSeconds(bi); });
+    L.push("Duration: ~" + mins(totalSec) + " min (planned estimate — tell me the real time if you tracked it)");
+    L.push("Feel: (optional — energy, appetite, right shoulder, mood)");
+
+    var skips = [];
+    WORKOUT.blocks.forEach(function (b, bi) {
+      L.push("");
+      var fmt = FMT_LABELS[b.kind] || b.kind;
+      var head = b.title.toUpperCase() + " — " + fmt + (b.rounds > 1 ? " · " + b.rounds + " rounds" : "");
+      if (isBlockSkipped(bi)) { L.push(head + "  [SKIPPED]"); skips.push(b.title + " (whole block)"); return; }
+      L.push(head);
+      b.exercises.forEach(function (ex, ei) {
+        var tag = ex.id ? " [" + ex.id + "]" : "";
+        var meta = ex.muscle_group ? (ex.muscle_group + (ex.per_side ? ", each side" : "")) : (ex.per_side ? "each side" : "");
+        var mg = meta ? " (" + meta + ")" : "";
+        if (isExSkipped(bi, ei)) { L.push("  " + ex.name + tag + mg + ": ○ skipped"); skips.push(ex.name); return; }
+        var toks = [];
+        for (var si = 0; si < b.rounds; si++) {
+          var v = getVal(bi, ei, si, ex);
+          toks.push((isSetDone(bi, ei, si) ? "✓" : "○") + setToken(ex, v));
+        }
+        L.push("  " + ex.name + tag + mg + ": " + toks.join("  "));
+      });
+    });
+    if (skips.length) { L.push(""); L.push("SKIPPED: " + skips.join(", ")); }
+    var p = progress();
+    L.push("");
+    L.push("── wt-summary v1 · id=" + WORKOUT.id + " · focus-slug=" + summarySlug(WORKOUT.focus) + " · done " + p.done + "/" + p.total + " sets ──");
+    return L.join("\n");
+  }
+
+  var summaryScrim = document.getElementById("summary-scrim");
+  var summaryTextEl = document.getElementById("summary-text");
+  var summaryStatus = document.getElementById("summary-status");
+  var SUMMARY_TIP = "Tip: if Copy doesn’t work, tap the text, Select All, then Copy.";
+
+  function openSummary() {
+    summaryTextEl.value = buildSummary();
+    summaryStatus.className = "summary-status";
+    summaryStatus.textContent = SUMMARY_TIP;
+    openScrim(summaryScrim);
+    selectSummary();
+  }
+  function selectSummary() {
+    try {
+      summaryTextEl.focus();
+      summaryTextEl.setSelectionRange(0, summaryTextEl.value.length);
+      summaryTextEl.select();
+    } catch (e) {}
+  }
+  function execCopy() {
+    try { selectSummary(); return document.execCommand("copy"); } catch (e) { return false; }
+  }
+  function copyResult(ok) {
+    if (ok) {
+      summaryStatus.className = "summary-status ok";
+      summaryStatus.textContent = "Copied ✓  Now paste it into a Claude chat.";
+    } else {
+      selectSummary();
+      summaryStatus.className = "summary-status";
+      summaryStatus.textContent = "Couldn’t copy automatically — text is selected, use your Copy command.";
+    }
+  }
+  function copySummary() {
+    var text = summaryTextEl.value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { copyResult(true); }, function () { copyResult(execCopy()); });
+    } else {
+      copyResult(execCopy());
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-summary]"), function (b) {
+    b.addEventListener("click", openSummary);
+  });
+  document.getElementById("summary-copy").addEventListener("click", copySummary);
+  document.getElementById("summary-done").addEventListener("click", function () { closeScrim(summaryScrim); });
+  summaryScrim.addEventListener("click", function (e) { if (e.target === summaryScrim) closeScrim(summaryScrim); });
+
+  // localhost-only introspection hook for deterministic verification (never on claude.ai)
+  try {
+    if (/^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname)) {
+      window.__wt = {
+        get active() { return active; },
+        start: startTimer, cmd: timerCmd, adjust: adjustTimer, round: addRound, tick: tick,
+        elapsed: function () { return active ? elapsedSec(active) : null; },
+        display: function () { return active ? liveDisplay(active) : null; },
+        fast: function (sec) { if (active) { active.elapsedBefore = sec * 1000; active.startedAt = nowMs(); tick(); } },
+        summary: buildSummary, openSummary: openSummary
+      };
+    }
+  } catch (e) {}
+
+  // ---------- boot ----------
+  initTheme();
+  render();
+})();
+</script>
